@@ -20,30 +20,34 @@
 
 package org.lsposed.manager;
 
-import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.Application;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.os.Build;
+import android.os.Environment;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
+import android.provider.MediaStore;
+import android.provider.Settings;
 import android.system.Os;
 import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.PreferenceManager;
 
 import org.lsposed.hiddenapibypass.HiddenApiBypass;
 import org.lsposed.manager.adapters.AppHelper;
+import org.lsposed.manager.receivers.LSPManagerServiceHolder;
 import org.lsposed.manager.repo.RepoLoader;
-import org.lsposed.manager.ui.activity.CrashReportActivity;
-import org.lsposed.manager.util.DoHDNS;
+import org.lsposed.manager.util.CloudflareDNS;
 import org.lsposed.manager.util.ModuleUtil;
 import org.lsposed.manager.util.Telemetry;
 import org.lsposed.manager.util.ThemeUtil;
@@ -53,8 +57,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -65,10 +69,10 @@ import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import rikka.core.os.FileUtils;
-import rikka.material.app.DayNightDelegate;
 import rikka.material.app.LocaleDelegate;
 
 public class App extends Application {
+    public static final int PER_USER_RANGE = 100000;
     public static final FutureTask<String> HTML_TEMPLATE = new FutureTask<>(() -> readWebviewHTML("template.html"));
     public static final FutureTask<String> HTML_TEMPLATE_DARK = new FutureTask<>(() -> readWebviewHTML("template_dark.html"));
 
@@ -86,7 +90,6 @@ public class App extends Application {
 
     static {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            // TODO: set specific class name
             HiddenApiBypass.addHiddenApiExemptions("");
         }
         Looper.myQueue().addIdleHandler(() -> {
@@ -95,25 +98,12 @@ public class App extends Application {
                 var list = AppHelper.getAppList(false);
                 var pm = App.getInstance().getPackageManager();
                 list.parallelStream().forEach(i -> AppHelper.getAppLabel(i, pm));
-            });
-            return false;
-        });
-
-        Looper.myQueue().addIdleHandler(() -> {
-            if (App.getInstance() == null || App.getExecutorService() == null) return true;
-            App.getExecutorService().submit(() -> {
                 AppHelper.getDenyList(false);
+                ModuleUtil.getInstance();
+                RepoLoader.getInstance();
             });
-            return false;
-        });
-        Looper.myQueue().addIdleHandler(() -> {
-            if (App.getInstance() == null || App.getExecutorService() == null) return true;
-            App.getExecutorService().submit((Runnable) ModuleUtil::getInstance);
-            return false;
-        });
-        Looper.myQueue().addIdleHandler(() -> {
-            if (App.getInstance() == null || App.getExecutorService() == null) return true;
-            App.getExecutorService().submit((Runnable) RepoLoader::getInstance);
+            App.getExecutorService().submit(HTML_TEMPLATE);
+            App.getExecutorService().submit(HTML_TEMPLATE_DARK);
             return false;
         });
     }
@@ -127,7 +117,8 @@ public class App extends Application {
     private static OkHttpClient okHttpClient;
     private static Cache okHttpCache;
     private SharedPreferences pref;
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private static final ExecutorService executorService = Executors.newCachedThreadPool();
+    private static final Handler MainHandler = new Handler(Looper.getMainLooper());
 
     public static App getInstance() {
         return instance;
@@ -138,11 +129,13 @@ public class App extends Application {
     }
 
     public static ExecutorService getExecutorService() {
-        return instance.executorService;
+        return executorService;
     }
 
-    public static boolean isParasitic() {
-        return !Process.isApplicationUid(Process.myUid());
+    public static final boolean isParasitic = !Process.isApplicationUid(Process.myUid());
+
+    public static Handler getMainHandler() {
+        return MainHandler;
     }
 
     @Override
@@ -150,7 +143,7 @@ public class App extends Application {
         super.attachBaseContext(base);
         Telemetry.start(this);
         var map = new HashMap<String, String>(1);
-        map.put("isParasitic", String.valueOf(isParasitic()));
+        map.put("isParasitic", String.valueOf(isParasitic));
         Telemetry.trackEvent("App start", map);
         var am = getSystemService(ActivityManager.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -167,49 +160,57 @@ public class App extends Application {
         }
     }
 
-    @SuppressLint("WrongConstant")
     private void setCrashReport() {
+        var handler = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            throwable.printStackTrace(pw);
-            String stackTraceString = sw.toString();
-
-            //Reduce data to 128KB so we don't get a TransactionTooLargeException when sending the intent.
-            //The limit is 1MB on Android but some devices seem to have it lower.
-            //See: http://developer.android.com/reference/android/os/TransactionTooLargeException.html
-            //And: http://stackoverflow.com/questions/11451393/what-to-do-on-transactiontoolargeexception#comment46697371_12809171
-            if (stackTraceString.length() > 131071) {
-                String disclaimer = " [stack trace too large]";
-                stackTraceString = stackTraceString.substring(0, 131071 - disclaimer.length()) + disclaimer;
+            var time = OffsetDateTime.now();
+            var dir = new File(getCacheDir(), "crash");
+            //noinspection ResultOfMethodCallIgnored
+            dir.mkdir();
+            var file = new File(dir, time.toEpochSecond() + ".log");
+            try (var pw = new PrintWriter(file)) {
+                pw.println(BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")");
+                pw.println(time);
+                pw.println("pid: " + Os.getpid() + " uid: " + Os.getuid());
+                throwable.printStackTrace(pw);
+            } catch (IOException ignored) {
             }
-            Intent intent = new Intent(App.this, CrashReportActivity.class);
-            intent.putExtra(BuildConfig.APPLICATION_ID + ".EXTRA_STACK_TRACE", stackTraceString);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            App.this.startActivity(intent);
-            System.exit(10);
-            Process.killProcess(Os.getpid());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                var table = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+                var values = new ContentValues();
+                values.put(MediaStore.Downloads.DISPLAY_NAME, "LSPosed_crash_report" + time.toEpochSecond() + ".zip");
+                values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS);
+                var cr = getContentResolver();
+                var uri = cr.insert(table, values);
+                if (uri == null) return;
+                try (var zipFd = cr.openFileDescriptor(uri, "wt")) {
+                    LSPManagerServiceHolder.getService().getLogs(zipFd);
+                } catch (Exception ignored) {
+                    cr.delete(uri, null, null);
+                }
+            }
+            if (handler != null) {
+                handler.uncaughtException(thread, throwable);
+            }
         });
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        if (!BuildConfig.DEBUG && !isParasitic()) {
-            setCrashReport();
-        }
-
         instance = this;
 
+        setCrashReport();
         pref = PreferenceManager.getDefaultSharedPreferences(this);
-        if ("CN".equals(Locale.getDefault().getCountry())) {
-            if (!pref.contains("doh")) {
+        if (!pref.contains("doh")) {
+            var name = "private_dns_mode";
+            if ("hostname".equals(Settings.Global.getString(getContentResolver(), name))) {
+                pref.edit().putBoolean("doh", false).apply();
+            } else {
                 pref.edit().putBoolean("doh", true).apply();
             }
         }
-        DayNightDelegate.setApplicationContext(this);
-        DayNightDelegate.setDefaultNightMode(ThemeUtil.getDarkTheme());
+        AppCompatDelegate.setDefaultNightMode(ThemeUtil.getDarkTheme());
         LocaleDelegate.setDefaultLocale(getLocale());
         var res = getResources();
         var config = res.getConfiguration();
@@ -225,10 +226,7 @@ public class App extends Application {
                 var intent = (Intent) inIntent.getParcelableExtra(Intent.EXTRA_INTENT);
                 Log.d(TAG, "onReceive: " + intent);
                 switch (intent.getAction()) {
-                    case Intent.ACTION_PACKAGE_ADDED:
-                    case Intent.ACTION_PACKAGE_CHANGED:
-                    case Intent.ACTION_PACKAGE_FULLY_REMOVED:
-                    case Intent.ACTION_UID_REMOVED: {
+                    case Intent.ACTION_PACKAGE_ADDED, Intent.ACTION_PACKAGE_CHANGED, Intent.ACTION_PACKAGE_FULLY_REMOVED, Intent.ACTION_UID_REMOVED -> {
                         var userId = intent.getIntExtra(Intent.EXTRA_USER, 0);
                         var packageName = intent.getStringExtra("android.intent.extra.PACKAGES");
                         var packageRemovedForAllUsers = intent.getBooleanExtra(EXTRA_REMOVED_FOR_ALL_USERS, false);
@@ -239,46 +237,35 @@ public class App extends Application {
                             else
                                 App.getExecutorService().submit(() -> AppHelper.getAppList(true));
                         }
-                        break;
                     }
-                    case ACTION_USER_ADDED:
-                    case ACTION_USER_REMOVED:
-                    case ACTION_USER_INFO_CHANGED: {
-                        App.getExecutorService().submit(() -> ModuleUtil.getInstance().reloadInstalledModules());
-                        break;
-                    }
+                    case ACTION_USER_ADDED, ACTION_USER_REMOVED, ACTION_USER_INFO_CHANGED -> App.getExecutorService().submit(() -> ModuleUtil.getInstance().reloadInstalledModules());
                 }
             }
-        }, intentFilter);
+        }, intentFilter, Context.RECEIVER_NOT_EXPORTED);
 
         UpdateUtil.loadRemoteVersion();
-
-        executorService.submit(HTML_TEMPLATE);
-        executorService.submit(HTML_TEMPLATE_DARK);
     }
 
     @NonNull
     public static OkHttpClient getOkHttpClient() {
-        if (okHttpClient == null) {
-            OkHttpClient.Builder builder = new OkHttpClient.Builder().cache(getOkHttpCache());
-            builder.addInterceptor(chain -> {
-                var request = chain.request().newBuilder();
-                request.header("User-Agent", TAG);
-                return chain.proceed(request.build());
-            });
-            HttpLoggingInterceptor log = new HttpLoggingInterceptor();
+        if (okHttpClient != null) return okHttpClient;
+        var builder = new OkHttpClient.Builder()
+            .cache(getOkHttpCache())
+            .dns(new CloudflareDNS());
+        if (BuildConfig.DEBUG) {
+            var log = new HttpLoggingInterceptor();
             log.setLevel(HttpLoggingInterceptor.Level.HEADERS);
-            if (BuildConfig.DEBUG) builder.addInterceptor(log);
-            okHttpClient = builder.dns(new DoHDNS(builder.build())).build();
+            builder.addInterceptor(log);
         }
+        okHttpClient = builder.build();
         return okHttpClient;
     }
 
     @NonNull
-    private static Cache getOkHttpCache() {
-        if (okHttpCache == null) {
-            okHttpCache = new Cache(new File(App.getInstance().getCacheDir(), "http_cache"), 50L * 1024L * 1024L);
-        }
+    public static Cache getOkHttpCache() {
+        if (okHttpCache != null) return okHttpCache;
+        long size50MiB = 50 * 1024 * 1024;
+        okHttpCache = new Cache(new File(instance.getCacheDir(), "http_cache"), size50MiB);
         return okHttpCache;
     }
 

@@ -28,11 +28,14 @@
 #include "context.h"
 #include "utils/jni_helper.hpp"
 #include "symbol_cache.h"
-#include "ConfigBridge.h"
+#include "config_bridge.h"
+#include "elf_util.h"
 
 using namespace lsplant;
 
 namespace lspd {
+    std::unique_ptr<Service> Service::instance_ = std::make_unique<Service>();
+
     jboolean
     Service::exec_transact_replace(jboolean *res, JNIEnv *env, [[maybe_unused]] jobject obj,
                                    va_list args) {
@@ -195,7 +198,9 @@ namespace lspd {
         auto binder_class = JNI_FindClass(env, "android/os/Binder");
         exec_transact_backup_methodID_ = JNI_GetMethodID(env, binder_class, "execTransact",
                                                          "(IJJI)Z");
-        if (!symbol_cache->setTableOverride) {
+        auto *setTableOverride = SandHook::ElfImg("/libart.so").getSymbAddress<void (*)(JNINativeInterface *)>(
+                "_ZN3art9JNIEnvExt16SetTableOverrideEPK18JNINativeInterface");
+        if (!setTableOverride) {
             LOGE("set table override not found");
         }
         memcpy(&native_interface_replace_, env->functions, sizeof(JNINativeInterface));
@@ -203,9 +208,8 @@ namespace lspd {
         call_boolean_method_va_backup_ = env->functions->CallBooleanMethodV;
         native_interface_replace_.CallBooleanMethodV = &call_boolean_method_va_replace;
 
-        if (symbol_cache->setTableOverride != nullptr) {
-            reinterpret_cast<void (*)(JNINativeInterface *)>(symbol_cache->setTableOverride)(
-                    &native_interface_replace_);
+        if (setTableOverride != nullptr) {
+            setTableOverride(&native_interface_replace_);
         }
         if (auto activity_thread_class = JNI_FindClass(env, "android/app/IActivityManager$Stub")) {
             if (auto *set_activity_controller_field = JNI_GetStaticFieldID(env,
@@ -297,7 +301,7 @@ namespace lspd {
 
         JNI_CallVoidMethod(env, wrapper.data, write_int_method_, getuid());
         JNI_CallVoidMethod(env, wrapper.data, write_int_method_, getpid());
-        JNI_CallVoidMethod(env, wrapper.data, write_string_method_, JNI_NewStringUTF(env, "android"));
+        JNI_CallVoidMethod(env, wrapper.data, write_string_method_, JNI_NewStringUTF(env, "system"));
         JNI_CallVoidMethod(env, wrapper.data, write_strong_binder_method_, heart_beat_binder);
 
         auto res = wrapper.transact(system_server_binder, BRIDGE_TRANSACTION_CODE);

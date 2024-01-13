@@ -20,6 +20,7 @@
 package org.lsposed.manager.ui.fragment;
 
 import android.annotation.SuppressLint;
+import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
@@ -33,6 +34,7 @@ import android.text.style.StyleSpan;
 import android.text.style.TypefaceSpan;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,6 +47,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.view.MenuProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -58,6 +61,9 @@ import org.lsposed.manager.ui.widget.EmptyStateRecyclerView;
 import org.lsposed.manager.util.ModuleUtil;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -70,7 +76,7 @@ import rikka.core.util.LabelComparator;
 import rikka.core.util.ResourceUtils;
 import rikka.recyclerview.RecyclerViewKt;
 
-public class RepoFragment extends BaseFragment implements RepoLoader.RepoListener, ModuleUtil.ModuleListener {
+public class RepoFragment extends BaseFragment implements RepoLoader.RepoListener, ModuleUtil.ModuleListener, MenuProvider {
     protected FragmentRepoBinding binding;
     protected SearchView searchView;
     private SearchView.OnQueryTextListener mSearchListener;
@@ -169,22 +175,24 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
     }
 
     @Override
-    public void onPrepareOptionsMenu(Menu menu) {
+    public void onPrepareMenu(Menu menu) {
         searchView = (SearchView) menu.findItem(R.id.menu_search).getActionView();
-        searchView.setOnQueryTextListener(mSearchListener);
-        searchView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
-            @Override
-            public void onViewAttachedToWindow(View arg0) {
-                binding.appBar.setExpanded(false, true);
-                binding.recyclerView.setNestedScrollingEnabled(false);
-            }
+        if (searchView != null) {
+            searchView.setOnQueryTextListener(mSearchListener);
+            searchView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                @Override
+                public void onViewAttachedToWindow(@NonNull View arg0) {
+                    binding.appBar.setExpanded(false, true);
+                    binding.recyclerView.setNestedScrollingEnabled(false);
+                }
 
-            @Override
-            public void onViewDetachedFromWindow(View v) {
-                binding.recyclerView.setNestedScrollingEnabled(true);
-            }
-        });
-        searchView.findViewById(androidx.appcompat.R.id.search_edit_frame).setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT);
+                @Override
+                public void onViewDetachedFromWindow(@NonNull View v) {
+                    binding.recyclerView.setNestedScrollingEnabled(true);
+                }
+            });
+            searchView.findViewById(androidx.appcompat.R.id.search_edit_frame).setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT);
+        }
         int sort = App.getPreferences().getInt("repo_sort", 0);
         if (sort == 0) {
             menu.findItem(R.id.item_sort_by_name).setChecked(true);
@@ -192,6 +200,10 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
             menu.findItem(R.id.item_sort_by_update_time).setChecked(true);
         }
         menu.findItem(R.id.item_upgradable_first).setChecked(App.getPreferences().getBoolean("upgradable_first", true));
+    }
+
+    @Override
+    public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
     }
 
     @Override
@@ -235,7 +247,7 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
     }
 
     @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+    public boolean onMenuItemSelected(@NonNull MenuItem item) {
         int itemId = item.getItemId();
         if (itemId == R.id.item_sort_by_name) {
             item.setChecked(true);
@@ -249,14 +261,20 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
             item.setChecked(!item.isChecked());
             App.getPreferences().edit().putBoolean("upgradable_first", item.isChecked()).apply();
             adapter.refresh();
+        } else {
+            return false;
         }
-        return super.onOptionsItemSelected(item);
+        return true;
     }
 
     private class RepoAdapter extends EmptyStateRecyclerView.EmptyStateAdapter<RepoAdapter.ViewHolder> implements Filterable {
         private List<OnlineModule> fullList, showList;
         private final LabelComparator labelComparator = new LabelComparator();
         private boolean isLoaded = false;
+        private final Resources resources = App.getInstance().getResources();
+        private final String[] channels = resources.getStringArray(R.array.update_channel_values);
+        private String channel;
+        private final RepoLoader repoLoader = RepoLoader.getInstance();
 
         RepoAdapter() {
             fullList = showList = Collections.emptyList();
@@ -265,7 +283,7 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
         @NonNull
         @Override
         public RepoAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new RepoAdapter.ViewHolder(ItemOnlinemoduleBinding.inflate(getLayoutInflater(), parent, false));
+            return new ViewHolder(ItemOnlinemoduleBinding.inflate(getLayoutInflater(), parent, false));
         }
 
         RepoLoader.ModuleVersion getUpgradableVer(OnlineModule module) {
@@ -283,7 +301,13 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
             OnlineModule module = showList.get(position);
             holder.appName.setText(module.getDescription());
             holder.appPackageName.setText(module.getName());
-
+            Instant instant;
+            channel = App.getPreferences().getString("update_channel", channels[0]);
+            var latestReleaseTime = repoLoader.getLatestReleaseTime(module.getName(), channel);
+            instant = Instant.parse(latestReleaseTime != null ? latestReleaseTime : module.getLatestReleaseTime());
+            var formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)
+                    .withLocale(App.getLocale()).withZone(ZoneId.systemDefault());
+            holder.publishedTime.setText(String.format(getString(R.string.module_repo_updated_time), formatter.format(instant)));
             SpannableStringBuilder sb = new SpannableStringBuilder();
 
             String summary = module.getSummary();
@@ -306,6 +330,13 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
                     sb.setSpan(styleSpan, sb.length() - hint.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
                 }
                 sb.setSpan(foregroundColorSpan, sb.length() - hint.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+            } else if (moduleUtil.getModule(module.getName()) != null) {
+                String installed = getString(R.string.installed);
+                sb.append(installed);
+                final StyleSpan styleSpan = new StyleSpan(Typeface.ITALIC);
+                sb.setSpan(styleSpan, sb.length() - installed.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+                final ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(ResourceUtils.resolveColor(requireActivity().getTheme(), com.google.android.material.R.attr.colorSecondary));
+                sb.setSpan(foregroundColorSpan, sb.length() - installed.length(), sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
             }
             if (sb.length() > 0) {
                 holder.hint.setVisibility(View.VISIBLE);
@@ -338,10 +369,11 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
         public void setData(Collection<OnlineModule> modules) {
             if (modules == null) return;
             setLoaded(null, false);
+            channel = App.getPreferences().getString("update_channel", channels[0]);
             int sort = App.getPreferences().getInt("repo_sort", 0);
             boolean upgradableFirst = App.getPreferences().getBoolean("upgradable_first", true);
             ConcurrentHashMap<String, Boolean> upgradable = new ConcurrentHashMap<>();
-            fullList = modules.parallelStream().filter((onlineModule -> !onlineModule.isHide() && !onlineModule.getReleases().isEmpty()))
+            fullList = modules.parallelStream().filter((onlineModule -> !onlineModule.isHide() && !(repoLoader.getReleases(onlineModule.getName()) != null && repoLoader.getReleases(onlineModule.getName()).isEmpty())))
                     .sorted((a, b) -> {
                         if (upgradableFirst) {
                             var aUpgrade = upgradable.computeIfAbsent(a.getName(), n -> getUpgradableVer(a) != null);
@@ -352,7 +384,7 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
                         if (sort == 0) {
                             return labelComparator.compare(a.getDescription(), b.getDescription());
                         } else {
-                            return Instant.parse(b.getReleases().get(0).getUpdatedAt()).compareTo(Instant.parse(a.getReleases().get(0).getUpdatedAt()));
+                            return Instant.parse(repoLoader.getLatestReleaseTime(b.getName(), channel)).compareTo(Instant.parse(repoLoader.getLatestReleaseTime(a.getName(), channel)));
                         }
                     }).collect(Collectors.toList());
             String queryStr = searchView != null ? searchView.getQuery().toString() : "";
@@ -386,20 +418,22 @@ public class RepoFragment extends BaseFragment implements RepoLoader.RepoListene
             return isLoaded && repoLoader.isRepoLoaded();
         }
 
-        class ViewHolder extends RecyclerView.ViewHolder {
+        static class ViewHolder extends RecyclerView.ViewHolder {
             ConstraintLayout root;
             TextView appName;
             TextView appPackageName;
             TextView appDescription;
             TextView hint;
+            TextView publishedTime;
 
             ViewHolder(ItemOnlinemoduleBinding binding) {
                 super(binding.getRoot());
                 root = binding.itemRoot;
                 appName = binding.appName;
-                appPackageName=binding.appPackageName;
+                appPackageName = binding.appPackageName;
                 appDescription = binding.description;
                 hint = binding.hint;
+                publishedTime = binding.publishedTime;
             }
         }
 

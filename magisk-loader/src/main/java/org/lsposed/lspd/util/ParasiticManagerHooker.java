@@ -89,6 +89,18 @@ public class ParasiticManagerHooker {
         return managerPkgInfo;
     }
 
+    private static void sendBinderToManager(final ClassLoader classLoader, IBinder binder) {
+        try {
+            var clazz = XposedHelpers.findClass("org.lsposed.manager.Constants", classLoader);
+            var ok = (boolean) XposedHelpers.callStaticMethod(clazz, "setBinder",
+                    new Class[]{IBinder.class}, binder);
+            if (ok) return;
+            throw new RuntimeException("setBinder: " + false);
+        } catch (Throwable t) {
+            Utils.logW("Could not send binder to LSPosed Manager", t);
+        }
+    }
+
     private static void hookForManager(ILSPManagerService managerService) {
         var managerApkHooker = new XC_MethodHook() {
             @Override
@@ -111,7 +123,7 @@ public class ParasiticManagerHooker {
                     protected void afterHookedMethod(MethodHookParam param) {
                         var pkgInfo = getManagerPkgInfo(null);
                         if (pkgInfo != null && XposedHelpers.getObjectField(param.thisObject, "mApplicationInfo") == pkgInfo.applicationInfo) {
-                            InstallerVerifier.sendBinderToManager((ClassLoader) param.getResult(), managerService.asBinder());
+                            sendBinderToManager((ClassLoader) param.getResult(), managerService.asBinder());
                             unhooks[0].unhook();
                         }
                     }
@@ -141,7 +153,7 @@ public class ParasiticManagerHooker {
                 }
                 if (param.method.getName().equals("scheduleLaunchActivity")) {
                     ActivityInfo aInfo = null;
-                    var parameters = ((Method)param.method).getParameterTypes();
+                    var parameters = ((Method) param.method).getParameterTypes();
                     for (var i = 0; i < parameters.length; ++i) {
                         if (parameters[i] == ActivityInfo.class) {
                             aInfo = (ActivityInfo) param.args[i];
@@ -224,7 +236,8 @@ public class ParasiticManagerHooker {
                         info.applicationInfo.packageName = packageName + ".origin";
                         var originalPkgInfo = ActivityThread.currentActivityThread().getPackageInfoNoCheck(info.applicationInfo, HiddenApiBridge.Resources_getCompatibilityInfo(ctx.getResources()));
                         XposedHelpers.setObjectField(originalPkgInfo, "mPackageName", packageName);
-                        originalContext = (Context) XposedHelpers.callStaticMethod(XposedHelpers.findClass("android.app.ContextImpl", null), "createAppContext", ActivityThread.currentActivityThread(), originalPkgInfo);
+                        originalContext = (Context) XposedHelpers.callStaticMethod(XposedHelpers.findClass("android.app.ContextImpl", null),
+                                "createAppContext", ActivityThread.currentActivityThread(), originalPkgInfo);
                         info.applicationInfo.packageName = packageName;
                     }
                     param.args[ctxIdx] = originalContext;
@@ -317,9 +330,8 @@ public class ParasiticManagerHooker {
 
 
     static public boolean start() {
-        try {
-            List<IBinder> binder = new ArrayList<>(1);
-            var managerParcelFd = serviceClient.requestInjectedManagerBinder(binder);
+        List<IBinder> binder = new ArrayList<>(1);
+        try (var managerParcelFd = serviceClient.requestInjectedManagerBinder(binder)) {
             if (binder.size() > 0 && binder.get(0) != null && managerParcelFd != null) {
                 managerFd = managerParcelFd.detachFd();
                 var managerService = ILSPManagerService.Stub.asInterface(binder.get(0));

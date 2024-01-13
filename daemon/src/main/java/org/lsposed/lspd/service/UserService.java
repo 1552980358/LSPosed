@@ -21,6 +21,7 @@ package org.lsposed.lspd.service;
 
 import static org.lsposed.lspd.service.ServiceManager.TAG;
 
+import android.content.Context;
 import android.content.pm.UserInfo;
 import android.os.Build;
 import android.os.IBinder;
@@ -53,8 +54,8 @@ public class UserService {
     }
 
     public static IUserManager getUserManager() {
-        if (binder == null && um == null) {
-            binder = ServiceManager.getService("user");
+        if (binder == null || um == null) {
+            binder = ServiceManager.getService(Context.USER_SERVICE);
             if (binder == null) return null;
             try {
                 binder.linkToDeath(recipient, 0);
@@ -99,6 +100,15 @@ public class UserService {
         IUserManager um = getUserManager();
         if (um == null) return null;
         return um.getUserInfo(userId);
+    }
+
+    public static String getUserName(int userId) {
+        try {
+            var userInfo = getUserInfo(userId);
+            if (userInfo != null) return userInfo.name;
+        } catch (RemoteException ignored) {
+        }
+        return String.valueOf(userId);
     }
 
     public static int getProfileParent(int userId) throws RemoteException {

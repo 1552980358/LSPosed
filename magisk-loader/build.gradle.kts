@@ -22,10 +22,10 @@ import org.apache.tools.ant.filters.FixCrLfFilter
 import org.apache.tools.ant.filters.ReplaceTokens
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
-import java.util.*
 
 plugins {
-    id("com.android.application")
+    alias(libs.plugins.agp.app)
+    alias(libs.plugins.lsplugin.resopt)
 }
 
 val moduleName = "LSPosed"
@@ -33,15 +33,14 @@ val moduleBaseId = "lsposed"
 val authors = "LSPosed Developers"
 
 val riruModuleId = "lsposed"
-val moduleMinRiruApiVersion = 25
-val moduleMinRiruVersionName = "25.0.1"
-val moduleMaxRiruApiVersion = 25
+val moduleMinRiruApiVersion = 26
+val moduleMinRiruVersionName = "26.1.7"
+val moduleMaxRiruApiVersion = 26
 
 val injectedPackageName: String by rootProject.extra
 val injectedPackageUid: Int by rootProject.extra
 
 val defaultManagerPackageName: String by rootProject.extra
-val apiCode: Int by rootProject.extra
 val verCode: Int by rootProject.extra
 val verName: String by rootProject.extra
 
@@ -50,13 +49,13 @@ android {
 
     buildFeatures {
         prefab = true
+        buildConfig = true
     }
 
     defaultConfig {
         applicationId = "org.lsposed.lspd"
         multiDexEnabled = false
 
-        buildConfigField("int", "API_CODE", "$apiCode")
         buildConfigField(
             "String",
             "DEFAULT_MANAGER_PACKAGE_NAME",
@@ -83,11 +82,10 @@ android {
         all {
             externalNativeBuild {
                 cmake {
-                    arguments += "-DMODULE_NAME=${name.toLowerCase()}_$moduleBaseId"
-                    arguments += "-DAPI=${name.toLowerCase()}"
+                    arguments += "-DMODULE_NAME=${name.lowercase()}_$moduleBaseId"
+                    arguments += "-DAPI=${name.lowercase()}"
                 }
             }
-            buildConfigField("String", "API", """"$name"""")
         }
 
         create("Riru") {
@@ -110,30 +108,33 @@ android {
     }
     namespace = "org.lsposed.lspd"
 }
+abstract class Injected @Inject constructor(val magiskDir: String) {
+    @get:Inject
+    abstract val factory: ObjectFactory
+}
 
 dependencies {
-    compileOnly("androidx.annotation:annotation:1.3.0")
-    compileOnly(projects.hiddenapi.stubs)
     implementation(projects.core)
     implementation(projects.hiddenapi.bridge)
     implementation(projects.services.managerService)
     implementation(projects.services.daemonService)
+    compileOnly(libs.androidx.annotation)
+    compileOnly(projects.hiddenapi.stubs)
 }
 
 val zipAll = task("zipAll") {
     group = "LSPosed"
-
 }
 
 fun afterEval() = android.applicationVariants.forEach { variant ->
-    val variantCapped = variant.name.capitalize(Locale.ROOT)
-    val variantLowered = variant.name.toLowerCase(Locale.ROOT)
-    val buildTypeCapped = variant.buildType.name.capitalize(Locale.ROOT)
-    val buildTypeLowered = variant.buildType.name.toLowerCase(Locale.ROOT)
-    val flavorCapped = variant.flavorName!!.capitalize(Locale.ROOT)
-    val flavorLowered = variant.flavorName!!.toLowerCase(Locale.ROOT)
+    val variantCapped = variant.name.replaceFirstChar { it.uppercase() }
+    val variantLowered = variant.name.lowercase()
+    val buildTypeCapped = variant.buildType.name.replaceFirstChar { it.uppercase() }
+    val buildTypeLowered = variant.buildType.name.lowercase()
+    val flavorCapped = variant.flavorName!!.replaceFirstChar { it.uppercase() }
+    val flavorLowered = variant.flavorName!!.lowercase()
 
-    val magiskDir = "$buildDir/magisk/$variantLowered"
+    val magiskDir = layout.buildDirectory.dir("magisk/$variantLowered")
 
     val moduleId = "${flavorLowered}_$moduleBaseId"
     val zipFileName = "$moduleName-v$verName-$verCode-${flavorLowered}-$buildTypeLowered.zip"
@@ -144,12 +145,12 @@ fun afterEval() = android.applicationVariants.forEach { variant ->
             "assemble$variantCapped",
             ":app:package$buildTypeCapped",
             ":daemon:package$buildTypeCapped",
-            ":dex2oat:merge${buildTypeCapped}NativeLibs"
+            ":dex2oat:externalNativeBuild${buildTypeCapped}"
         )
         into(magiskDir)
         from("${rootProject.projectDir}/README.md")
         from("$projectDir/magisk_module") {
-            exclude("riru.sh", "module.prop", "customize.sh", "sepolicy.rule", "daemon")
+            exclude("riru.sh", "module.prop", "customize.sh", "daemon")
         }
         from("$projectDir/magisk_module") {
             include("module.prop")
@@ -179,7 +180,7 @@ fun afterEval() = android.applicationVariants.forEach { variant ->
         }
         if (flavorLowered == "riru") {
             from("${projectDir}/magisk_module") {
-                include("riru.sh", "sepolicy.rule")
+                include("riru.sh")
                 val tokens = mapOf(
                     "RIRU_MODULE_LIB_NAME" to "lspd",
                     "RIRU_MODULE_API_VERSION" to moduleMaxRiruApiVersion.toString(),
@@ -199,33 +200,33 @@ fun afterEval() = android.applicationVariants.forEach { variant ->
             rename(".*\\.apk", "daemon.apk")
         }
         into("lib") {
-            from("${buildDir}/intermediates/cmake/$variantCapped/obj") {
+            from(layout.buildDirectory.dir("intermediates/stripped_native_libs/$variantCapped/out/lib")) {
                 include("**/liblspd.so")
-            }
-            from("${project(":daemon").buildDir}/intermediates/cmake/$buildTypeLowered/obj") {
-                include("**/libdaemon.so")
             }
         }
         into("bin") {
-            from("${project(":dex2oat").buildDir}/intermediates/cmake/$buildTypeLowered/obj") {
+            from(project(":dex2oat").layout.buildDirectory.dir("intermediates/cmake/$buildTypeLowered/obj")) {
                 include("**/dex2oat")
             }
         }
         val dexOutPath = if (buildTypeLowered == "release")
-            "$buildDir/intermediates/dex/$variantCapped/minify${variantCapped}WithR8" else
-            "$buildDir/intermediates/dex/$variantCapped/mergeDex$variantCapped"
+            layout.buildDirectory.dir("intermediates/dex/$variantCapped/minify${variantCapped}WithR8")
+        else
+            layout.buildDirectory.dir("intermediates/dex/$variantCapped/mergeDex$variantCapped")
         into("framework") {
             from(dexOutPath)
             rename("classes.dex", "lspd.dex")
         }
+
+        val injected = objects.newInstance<Injected>(magiskDir.get().asFile.path)
         doLast {
-            fileTree(magiskDir).visit {
+            injected.factory.fileTree().from(injected.magiskDir).visit {
                 if (isDirectory) return@visit
                 val md = MessageDigest.getInstance("SHA-256")
                 file.forEachBlock(4096) { bytes, size ->
                     md.update(bytes, 0, size)
                 }
-                file(file.path + ".sha256").writeText(Hex.encodeHexString(md.digest()))
+                File(file.path + ".sha256").writeText(Hex.encodeHexString(md.digest()))
             }
         }
     }
@@ -233,8 +234,8 @@ fun afterEval() = android.applicationVariants.forEach { variant ->
     val zipTask = task<Zip>("zip${variantCapped}") {
         group = "LSPosed"
         dependsOn(prepareMagiskFilesTask)
-        archiveFileName.set(zipFileName)
-        destinationDirectory.set(file("$projectDir/release"))
+        archiveFileName = zipFileName
+        destinationDirectory = file("$projectDir/release")
         from(magiskDir)
     }
 
@@ -247,7 +248,7 @@ fun afterEval() = android.applicationVariants.forEach { variant ->
         workingDir("${projectDir}/release")
         commandLine(adb, "push", zipFileName, "/data/local/tmp/")
     }
-    val flashTask = task<Exec>("flash${variantCapped}") {
+    val flashMagiskTask = task<Exec>("flashMagisk${variantCapped}") {
         group = "LSPosed"
         dependsOn(pushTask)
         commandLine(
@@ -255,10 +256,23 @@ fun afterEval() = android.applicationVariants.forEach { variant ->
             "magisk --install-module /data/local/tmp/${zipFileName}"
         )
     }
-    task<Exec>("flashAndReboot${variantCapped}") {
+    task<Exec>("flashMagiskAndReboot${variantCapped}") {
         group = "LSPosed"
-        dependsOn(flashTask)
-        commandLine(adb, "shell", "reboot")
+        dependsOn(flashMagiskTask)
+        commandLine(adb, "shell", "su", "-c", "/system/bin/svc", "power", "reboot")
+    }
+    val flashKsuTask = task<Exec>("flashKsu${variantCapped}") {
+        group = "LSPosed"
+        dependsOn(pushTask)
+        commandLine(
+            adb, "shell", "su", "-c",
+            "ksud module install /data/local/tmp/${zipFileName}"
+        )
+    }
+    task<Exec>("flashKsuAndReboot${variantCapped}") {
+        group = "LSPosed"
+        dependsOn(flashKsuTask)
+        commandLine(adb, "shell", "su", "-c", "/system/bin/svc", "power", "reboot")
     }
 }
 
@@ -275,7 +289,7 @@ val killLspd = task<Exec>("killLspd") {
 val pushDaemon = task<Exec>("pushDaemon") {
     group = "LSPosed"
     dependsOn(":daemon:assembleDebug")
-    workingDir("${project(":daemon").buildDir}/outputs/apk/debug")
+    workingDir(project(":daemon").layout.buildDirectory.dir("outputs/apk/debug"))
     commandLine(adb, "push", "daemon-debug.apk", "/data/local/tmp/daemon.apk")
 }
 val pushDaemonNative = task<Exec>("pushDaemonNative") {
@@ -289,7 +303,7 @@ val pushDaemonNative = task<Exec>("pushDaemonNative") {
             }
             outputStream.toString().trim()
         }
-        workingDir("${project(":daemon").buildDir}/intermediates/cmake/debug/obj/$abi")
+        workingDir(project(":daemon").layout.buildDirectory.dir("intermediates/stripped_native_libs/debug/out/lib/$abi"))
     }
     commandLine(adb, "push", "libdaemon.so", "/data/local/tmp/libdaemon.so")
 }
@@ -298,41 +312,34 @@ val reRunDaemon = task<Exec>("reRunDaemon") {
     dependsOn(pushDaemon, pushDaemonNative, killLspd)
     // tricky to pass a minus number to avoid the injection warning
     commandLine(
-        adb,
-        "shell",
-        "ASH_STANDALONE=1",
-        "su",
-        "-pc",
+        adb, "shell", "ASH_STANDALONE=1", "su", "-mm", "-pc",
         "/data/adb/magisk/busybox sh /data/adb/modules/*_lsposed/service.sh --system-server-max-retry=-1&"
     )
     isIgnoreExitValue = true
 }
-val tmpApk = "/data/local/tmp/lsp.apk"
+val tmpApk = "/data/local/tmp/manager.apk"
 val pushApk = task<Exec>("pushApk") {
     group = "LSPosed"
     dependsOn(":app:assembleDebug")
-    workingDir("${project(":app").buildDir}/outputs/apk/debug")
+    doFirst {
+        exec {
+            commandLine(adb, "shell", "su", "-c", "rm", "-f", tmpApk)
+        }
+    }
+    workingDir(project(":app").layout.buildDirectory.dir("outputs/apk/debug"))
     commandLine(adb, "push", "app-debug.apk", tmpApk)
 }
 val openApp = task<Exec>("openApp") {
     group = "LSPosed"
     commandLine(
-        adb,
-        "shell",
-        "am",
-        "start",
-        "-a",
-        "android.intent.action.MAIN",
-        "-c",
-        "org.lsposed.manager.LAUNCH_MANAGER",
+        adb, "shell",
+        "am", "start", "-c", "org.lsposed.manager.LAUNCH_MANAGER",
         "com.android.shell/.BugreportWarningActivity"
     )
 }
-task<Exec>("reRunApp") {
+task("reRunApp") {
     group = "LSPosed"
     dependsOn(pushApk)
-    commandLine(adb, "shell", "su", "-c", "mv -f $tmpApk /data/adb/lspd/manager.apk")
-    isIgnoreExitValue = true
     finalizedBy(reRunDaemon)
 }
 

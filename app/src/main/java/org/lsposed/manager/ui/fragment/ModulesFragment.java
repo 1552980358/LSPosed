@@ -39,6 +39,7 @@ import android.text.style.TypefaceSpan;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,6 +53,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavOptions;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -92,7 +94,7 @@ import rikka.core.util.ResourceUtils;
 import rikka.material.app.LocaleDelegate;
 import rikka.recyclerview.RecyclerViewKt;
 
-public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleListener, RepoLoader.RepoListener {
+public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleListener, RepoLoader.RepoListener, MenuProvider {
     private static final PackageManager pm = App.getInstance().getPackageManager();
     private static final ModuleUtil moduleUtil = ModuleUtil.getInstance();
     private static final RepoLoader repoLoader = RepoLoader.getInstance();
@@ -190,20 +192,32 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
     }
 
     @Override
-    public void onPrepareOptionsMenu(Menu menu) {
+    public void onPrepareMenu(Menu menu) {
         searchView = (SearchView) menu.findItem(R.id.menu_search).getActionView();
-        searchView.setOnQueryTextListener(searchListener);
-        searchView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
-            @Override
-            public void onViewAttachedToWindow(View arg0) {
-                binding.appBar.setExpanded(false, true);
-            }
+        if (searchView != null) {
+            searchView.setOnQueryTextListener(searchListener);
+            searchView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                @Override
+                public void onViewAttachedToWindow(@NonNull View arg0) {
+                    binding.appBar.setExpanded(false, true);
+                }
 
-            @Override
-            public void onViewDetachedFromWindow(View v) {
-            }
-        });
-        searchView.findViewById(androidx.appcompat.R.id.search_edit_frame).setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT);
+                @Override
+                public void onViewDetachedFromWindow(@NonNull View v) {
+                }
+            });
+            searchView.findViewById(androidx.appcompat.R.id.search_edit_frame).setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT);
+        }
+    }
+
+    @Override
+    public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+
+    }
+
+    @Override
+    public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+        return false;
     }
 
     @Override
@@ -355,12 +369,12 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
 
         private final View.OnAttachStateChangeListener searchViewLocker = new View.OnAttachStateChangeListener() {
             @Override
-            public void onViewAttachedToWindow(View v) {
+            public void onViewAttachedToWindow(@NonNull View v) {
                 binding.recyclerView.setNestedScrollingEnabled(false);
             }
 
             @Override
-            public void onViewDetachedFromWindow(View v) {
+            public void onViewDetachedFromWindow(@NonNull View v) {
                 binding.recyclerView.setNestedScrollingEnabled(true);
             }
         };
@@ -387,8 +401,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
 
         void attachListeners() {
             var parent = getParentFragment();
-            if (parent instanceof ModulesFragment) {
-                var moduleFragment = (ModulesFragment) parent;
+            if (parent instanceof ModulesFragment moduleFragment) {
                 binding.recyclerView.getBorderViewDelegate().setBorderVisibilityChangedListener((top, oldTop, bottom, oldBottom) -> moduleFragment.binding.appBar.setLifted(!top));
                 moduleFragment.binding.appBar.setLifted(!binding.recyclerView.getBorderViewDelegate().isShowingTopBorder());
                 moduleFragment.searchView.addOnAttachStateChangeListener(searchViewLocker);
@@ -407,8 +420,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
         void detachListeners() {
             binding.recyclerView.getBorderViewDelegate().setBorderVisibilityChangedListener(null);
             var parent = getParentFragment();
-            if (parent instanceof ModulesFragment) {
-                var moduleFragment = (ModulesFragment) parent;
+            if (parent instanceof ModulesFragment moduleFragment) {
                 moduleFragment.searchView.removeOnAttachStateChangeListener(searchViewLocker);
                 binding.recyclerView.setNestedScrollingEnabled(true);
             }
@@ -505,7 +517,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
         @NonNull
         @Override
         public ModuleAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new ModuleAdapter.ViewHolder(ItemModuleBinding.inflate(getLayoutInflater(), parent, false));
+            return new ViewHolder(ItemModuleBinding.inflate(getLayoutInflater(), parent, false));
         }
 
         public boolean isPick() {
@@ -550,9 +562,11 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
             if (item.minVersion == 0) {
                 warningText = getString(R.string.no_min_version_specified);
             } else if (installXposedVersion > 0 && item.minVersion > installXposedVersion) {
-                warningText = String.format(getString(R.string.warning_xposed_min_version), item.minVersion);
+                warningText = getString(R.string.warning_xposed_min_version, item.minVersion);
+            } else if (item.targetVersion > installXposedVersion) {
+                warningText = getString(R.string.warning_target_version_higher, item.targetVersion);
             } else if (item.minVersion < ModuleUtil.MIN_MODULE_VERSION) {
-                warningText = String.format(getString(R.string.warning_min_version_too_low), item.minVersion, ModuleUtil.MIN_MODULE_VERSION);
+                warningText = getString(R.string.warning_min_version_too_low, item.minVersion, ModuleUtil.MIN_MODULE_VERSION);
             } else if (item.isInstalledOnExternalStorage()) {
                 warningText = getString(R.string.warning_installed_on_external_storage);
             }
@@ -698,21 +712,21 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
                             return 1;
                         }
                     }).forEachOrdered(new Consumer<>() {
-                private final HashSet<String> uniquer = new HashSet<>();
+                        private final HashSet<String> uniquer = new HashSet<>();
 
-                @Override
-                public void accept(ModuleUtil.InstalledModule module) {
-                    if (isPick()) {
-                        if (!uniquer.contains(module.packageName)) {
-                            uniquer.add(module.packageName);
-                            if (module.userId != getUser().id)
+                        @Override
+                        public void accept(ModuleUtil.InstalledModule module) {
+                            if (isPick()) {
+                                if (!uniquer.contains(module.packageName)) {
+                                    uniquer.add(module.packageName);
+                                    if (module.userId != getUser().id)
+                                        tmpList.add(module);
+                                }
+                            } else if (module.userId == getUser().id) {
                                 tmpList.add(module);
+                            }
                         }
-                    } else if (module.userId == getUser().id) {
-                        tmpList.add(module);
-                    }
-                }
-            });
+                    });
             String queryStr = searchView != null ? searchView.getQuery().toString() : "";
             searchList = tmpList;
             runOnUiThread(() -> getFilter().filter(queryStr));
@@ -732,7 +746,7 @@ public class ModulesFragment extends BaseFragment implements ModuleUtil.ModuleLi
             return isLoaded && moduleUtil.isModulesLoaded();
         }
 
-        class ViewHolder extends RecyclerView.ViewHolder {
+        static class ViewHolder extends RecyclerView.ViewHolder {
             ConstraintLayout root;
             ImageView appIcon;
             TextView appName;

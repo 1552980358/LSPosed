@@ -26,11 +26,16 @@
 #include "jni/hook_bridge.h"
 #include "jni/native_api.h"
 #include "jni/resources_hook.h"
+#include "jni/dex_parser.h"
 #include "symbol_cache.h"
 
 using namespace lsplant;
 
+
 namespace lspd {
+    std::unique_ptr<Context> Context::instance_;
+    std::unique_ptr<ConfigBridge> ConfigBridge::instance_;
+
     Context::PreloadedDex::PreloadedDex(int fd, std::size_t size) {
         LOGD("Context::PreloadedDex::PreloadedDex: fd={}, size={}", fd, size);
         auto *addr = mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
@@ -87,6 +92,7 @@ namespace lspd {
         RegisterResourcesHook(env);
         RegisterHookBridge(env);
         RegisterNativeAPI(env);
+        RegisterDexParserBridge(env);
     }
 
     ScopedLocalRef<jclass>

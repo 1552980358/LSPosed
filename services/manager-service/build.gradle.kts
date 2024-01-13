@@ -18,10 +18,14 @@
  */
 
 plugins {
-    id("com.android.library")
+    alias(libs.plugins.agp.lib)
 }
 
 android {
+    buildFeatures {
+        aidl = true
+    }
+
     defaultConfig {
         consumerProguardFiles("proguard-rules.pro")
     }
@@ -35,5 +39,5 @@ android {
 }
 
 dependencies {
-    api(projects.services.xposedService.`interface`)
+    api(libs.rikkax.parcelablelist)
 }

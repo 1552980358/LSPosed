@@ -18,10 +18,14 @@
  */
 
 plugins {
-    id("com.android.library")
+    alias(libs.plugins.agp.lib)
 }
 
 android {
+    buildFeatures {
+        aidl = true
+    }
+
     defaultConfig {
         consumerProguardFiles("proguard-rules.pro")
     }

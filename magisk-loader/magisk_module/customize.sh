@@ -82,22 +82,13 @@ extract "$ZIPFILE" 'module.prop'        "$MODPATH"
 extract "$ZIPFILE" 'post-fs-data.sh'    "$MODPATH"
 extract "$ZIPFILE" 'service.sh'         "$MODPATH"
 extract "$ZIPFILE" 'uninstall.sh'       "$MODPATH"
+extract "$ZIPFILE" 'sepolicy.rule'      "$MODPATH"
 extract "$ZIPFILE" 'framework/lspd.dex' "$MODPATH"
 extract "$ZIPFILE" 'daemon.apk'         "$MODPATH"
 extract "$ZIPFILE" 'daemon'             "$MODPATH"
 rm -f /data/adb/lspd/manager.apk
-extract "$ZIPFILE" 'manager.apk'        '/data/adb/lspd'
+extract "$ZIPFILE" 'manager.apk'        "$MODPATH"
 
-ui_print "- Extracting daemon libraries"
-if [ "$ARCH" = "arm" ] ; then
-  extract "$ZIPFILE" 'lib/armeabi-v7a/libdaemon.so' "$MODPATH" true
-elif [ "$ARCH" = "arm64" ]; then
-  extract "$ZIPFILE" 'lib/arm64-v8a/libdaemon.so' "$MODPATH" true
-elif [ "$ARCH" = "x86" ]; then
-  extract "$ZIPFILE" 'lib/x86/libdaemon.so' "$MODPATH" true
-elif [ "$ARCH" = "x64" ]; then
-  extract "$ZIPFILE" 'lib/x86_64/libdaemon.so' "$MODPATH" true
-fi
 if [ "$FLAVOR" == "zygisk" ]; then
   mkdir -p "$MODPATH/zygisk"
   if [ "$ARCH" = "arm" ] || [ "$ARCH" = "arm64" ]; then
@@ -120,7 +111,6 @@ if [ "$FLAVOR" == "zygisk" ]; then
     fi
   fi
 elif [ "$FLAVOR" == "riru" ]; then
-  extract "$ZIPFILE" 'sepolicy.rule'      "$MODPATH"
   mkdir "$MODPATH/riru"
   mkdir "$MODPATH/riru/lib"
   mkdir "$MODPATH/riru/lib64"
@@ -182,19 +172,16 @@ if [ "$API" -ge 29 ]; then
   fi
 
   ui_print "- Patching binaries"
-  DEV_PATH=$(tr -dc 'a-f0-9' < /dev/urandom | head -c 16)
-  while [ -d "/dev/$DEV_PATH" ]; do
-    DEV_PATH=$(tr -dc 'a-f0-9' < /dev/urandom | head -c 16)
-  done
-  sed -i "s/placeholder_\/dev\/................/placeholder_\/dev\/$DEV_PATH/" "$MODPATH/libdaemon.so"
-  sed -i "s/placeholder_\/dev\/................/placeholder_\/dev\/$DEV_PATH/" "$MODPATH/bin/dex2oat32"
-  sed -i "s/placeholder_\/dev\/................/placeholder_\/dev\/$DEV_PATH/" "$MODPATH/bin/dex2oat64"
+  DEV_PATH=$(tr -dc 'a-z0-9' < /dev/urandom | head -c 32)
+  sed -i "s/5291374ceda0aef7c5d86cd2a4f6a3ac/$DEV_PATH/g" "$MODPATH/daemon.apk"
+  sed -i "s/5291374ceda0aef7c5d86cd2a4f6a3ac/$DEV_PATH/" "$MODPATH/bin/dex2oat32"
+  sed -i "s/5291374ceda0aef7c5d86cd2a4f6a3ac/$DEV_PATH/" "$MODPATH/bin/dex2oat64"
 else
   extract "$ZIPFILE" 'system.prop' "$MODPATH"
 fi
 
 set_perm_recursive "$MODPATH" 0 0 0755 0644
-set_perm_recursive "$MODPATH/bin" 0 0 0755 0755 u:object_r:dex2oat_exec:s0
+set_perm_recursive "$MODPATH/bin" 0 2000 0755 0755 u:object_r:magisk_file:s0
 chmod 0744 "$MODPATH/daemon"
 
 if [ "$(grep_prop ro.maple.enable)" == "1" ] && [ "$FLAVOR" == "zygisk" ]; then

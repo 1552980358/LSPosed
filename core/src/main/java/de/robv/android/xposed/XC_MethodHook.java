@@ -20,7 +20,9 @@
 
 package de.robv.android.xposed;
 
+import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
+import java.util.HashMap;
 
 import de.robv.android.xposed.callbacks.IXUnhook;
 import de.robv.android.xposed.callbacks.XCallback;
@@ -65,10 +67,10 @@ public abstract class XC_MethodHook extends XCallback {
      * @param param Information about the method call.
      * @throws Throwable Everything the callback throws is caught and logged.
      */
-    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+    protected void beforeHookedMethod(MethodHookParam<?> param) throws Throwable {
     }
 
-    public void callBeforeHookedMethod(MethodHookParam param) throws Throwable {
+    public void callBeforeHookedMethod(MethodHookParam<?> param) throws Throwable {
         beforeHookedMethod(param);
     }
 
@@ -83,17 +85,17 @@ public abstract class XC_MethodHook extends XCallback {
      * @param param Information about the method call.
      * @throws Throwable Everything the callback throws is caught and logged.
      */
-    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+    protected void afterHookedMethod(MethodHookParam<?> param) throws Throwable {
     }
 
-    public void callAfterHookedMethod(MethodHookParam param) throws Throwable {
+    public void callAfterHookedMethod(MethodHookParam<?> param) throws Throwable {
         afterHookedMethod(param);
     }
 
     /**
      * Wraps information about the method call and allows to influence it.
      */
-    public static final class MethodHookParam extends XCallback.Param {
+    public static final class MethodHookParam<T extends Executable> extends XCallback.Param {
         /**
          * @hide
          */
@@ -117,9 +119,11 @@ public abstract class XC_MethodHook extends XCallback {
          */
         public Object[] args;
 
-        private Object result = null;
-        private Throwable throwable = null;
+        public Object result = null;
+        public Throwable throwable = null;
         public boolean returnEarly = false;
+
+        private final HashMap<String, Object> extras = new HashMap<>();
 
         /**
          * Returns the result of the method call.

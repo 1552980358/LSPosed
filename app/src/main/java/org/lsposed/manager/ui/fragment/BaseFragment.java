@@ -19,20 +19,18 @@
 
 package org.lsposed.manager.ui.fragment;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.IdRes;
 import androidx.annotation.StringRes;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.NavDirections;
 import androidx.navigation.fragment.NavHostFragment;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -43,8 +41,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
-public class BaseFragment extends Fragment {
-    private final Handler uiHandler = new Handler(Looper.getMainLooper());
+public abstract class BaseFragment extends Fragment {
 
     public void navigateUp() {
         getNavController().navigateUp();
@@ -92,8 +89,10 @@ public class BaseFragment extends Fragment {
         if (tipsView != null) tipsView.setTooltipText(title);
         if (menu != -1) {
             toolbar.inflateMenu(menu);
-            toolbar.setOnMenuItemClickListener(this::onOptionsItemSelected);
-            onPrepareOptionsMenu(toolbar.getMenu());
+            if (this instanceof MenuProvider self) {
+                toolbar.setOnMenuItemClickListener(self::onMenuItemSelected);
+                self.onPrepareMenu(toolbar.getMenu());
+            }
         }
     }
 
@@ -106,7 +105,7 @@ public class BaseFragment extends Fragment {
     }
 
     public void runOnUiThread(Runnable runnable) {
-        uiHandler.post(runnable);
+        App.getMainHandler().post(runnable);
     }
 
     public <T> Future<T> runOnUiThread(Callable<T> callable) {
@@ -128,18 +127,15 @@ public class BaseFragment extends Fragment {
     }
 
     public void showHint(CharSequence str, boolean lengthShort, CharSequence actionStr, View.OnClickListener action) {
-        if (isResumed()) {
-            var container = requireActivity().findViewById(R.id.container);
-            if (container != null) {
-                var snackbar = Snackbar.make(container, str, lengthShort ? Snackbar.LENGTH_SHORT : Snackbar.LENGTH_LONG);
-                if (container.findViewById(R.id.nav) instanceof BottomNavigationView)
-                    snackbar.setAnchorView(R.id.nav);
-                if (container.findViewById(R.id.fab) instanceof FloatingActionButton)
-                    snackbar.setAnchorView(R.id.fab);
-                if (actionStr != null && action != null) snackbar.setAction(actionStr, action);
-                snackbar.show();
-                return;
-            }
+        var container = getView();
+        if (isResumed() && container != null) {
+            var snackbar = Snackbar.make(container, str, lengthShort ? Snackbar.LENGTH_SHORT : Snackbar.LENGTH_LONG);
+            var fab = container.findViewById(R.id.fab);
+            if (fab instanceof FloatingActionButton && ((FloatingActionButton) fab).isOrWillBeShown())
+                snackbar.setAnchorView(fab);
+            if (actionStr != null && action != null) snackbar.setAction(actionStr, action);
+            snackbar.show();
+            return;
         }
         runOnUiThread(() -> {
             try {
@@ -148,5 +144,4 @@ public class BaseFragment extends Fragment {
             }
         });
     }
-
 }

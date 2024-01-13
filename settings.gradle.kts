@@ -1,27 +1,26 @@
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
-    val navVersion: String by settings
-    val agpVersion: String by settings
     repositories {
         gradlePluginPortal()
         google()
         mavenCentral()
     }
-    plugins {
-        id("com.android.library") version agpVersion
-        id("com.android.application") version agpVersion
-        id("androidx.navigation.safeargs") version navVersion
-        id("dev.rikka.tools.autoresconfig") version "1.1.1"
-        id("dev.rikka.tools.materialthemebuilder") version "1.3.2"
-    }
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
     repositories {
         google()
         mavenCentral()
+        mavenLocal {
+            content {
+                includeGroup("io.github.libxposed")
+            }
+        }
+    }
+    versionCatalogs {
+        create("libs")
     }
 }
 
@@ -36,5 +35,4 @@ include(
     ":magisk-loader",
     ":services:manager-service",
     ":services:daemon-service",
-    ":services:xposed-service:interface",
 )

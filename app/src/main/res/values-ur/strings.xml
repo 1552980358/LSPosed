@@ -19,7 +19,6 @@
   -->
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
     <!-- MainActivity -->
-    <string name="info">معلومات</string>
     <string name="overview">جائزہ</string>
     <string name="Modules">ماڈیولز</string>
     <plurals name="modules_enabled_count">
@@ -32,14 +31,15 @@
     <string name="About">معلومات</string>
     <string name="report_issue">رپورٹ ایشو۔</string>
     <string name="module_repo">مخزن۔</string>
-    <string name="module_repo_loading">لوڈ ہو رہا ہے…</string>
     <string name="module_repo_up_to_date">تمام ماڈیولز اپ ٹو ڈیٹ</string>
+    <string name="module_repo_published_time">%sپر شائع ہوا۔</string>
+    <string name="module_repo_updated_time">%sپر اپ ڈیٹ کیا گیا۔</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d ماڈیول قابل اپ گریڈ</item>
         <item quantity="other">%d ماڈیولز قابل اپ گریڈ</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[ماخذ کوڈ دیکھیں %1$s<br/> ہمارے ساتھ شامل ہوں%2$s چینل۔]]></string>
-    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">null</string>
+    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">PGH Gaming Official</string>
     <string name="install">انسٹال</string>
     <string name="install_summary">کلک تو انسٹال LSposed</string>
     <string name="not_installed">یہ انسٹال نہیں ہے۔</string>
@@ -47,22 +47,22 @@
     <string name="activated">یہ چالو ہے۔</string>
     <string name="partial_activated">جزوی طور پر فعال</string>
     <string name="selinux_policy_not_loaded_summary">SePolicy ٹھیک سے آن نہیں ہے</string>
-    <string name="selinux_policy_not_loaded"><![CDATA[سسٹم فریم ورک کو جوڑنے والے ماڈیول کام نہیں کریں گے۔<br/>براہ کرم اس کی اطلاع <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a> ڈویلپر کو دیں۔]]></string>
+    <string name="selinux_policy_not_loaded"><![CDATA[<a href="https://github.com/topjohnwu/Magisk/issues"mggnteer.]]></string>
     <string name="system_inject_fail_summary">سسٹم فریم ورک انجکشن ناکام۔</string>
     <string name="system_inject_fail"><![CDATA[یہ نایاب ہے اور یہ <b>Magisk</b> یا کچھ کم معیار کے Magisk ماڈیولز کی وجہ سے ہو سکتا ہے۔<br/>براہ کرم Riru اور LSPosed کے علاوہ Magisk ماڈیولز کو غیر فعال کرنے کی کوشش کریں یا مکمل لاگ ڈویلپرز کو جمع کرائیں۔]]></string>
     <string name="system_prop_incorrect_summary">سسٹم پروپ غلط ہے۔</string>
     <string name="system_prop_incorrect"><![CDATA[سسٹم کی کچھ ضروری خصوصیات حذف یا ترمیم کی گئیں۔<br/>ماڈیول کبھی کبھار باطل ہو سکتے ہیں۔]]></string>
     <string name="need_update">اپ ڈیٹ درکار ہے۔</string>
     <string name="please_update_summary">براہ کرم LSPosed کا تازہ ترین ورژن انسٹال کریں۔</string>
-    <string name="lsposed_not_active">LSPosed فی الحال انسٹال یا فعال نہیں ہے.</string>
     <string name="info_api_version">API ورژن۔</string>
     <string name="info_framework_version">فریم ورک ورژن۔</string>
-    <string name="info_manager_version">مینجر ورژن۔</string>
+    <string name="info_manager_package_name">مینیجر پیکیج کا نام</string>
     <string name="info_system_version">سسٹم ورژن۔</string>
     <string name="info_device">ڈیوائس۔</string>
     <string name="info_system_abi">ABI سسٹم۔</string>
-    <string name="info_api">انجیکشن انٹرفیس</string>
     <string name="info_dex2oat_wrapper">ڈیکس آپٹیمائزر ریپر</string>
+    <string name="enabled">فعال</string>
+    <string name="not_enabled">فعال نہیں ہے۔</string>
     <string name="supported">حمایت یافتہ</string>
     <string name="unsupported">غیر تعاون یافتہ</string>
     <string name="android_version_unsatisfied">Android ورژن غیر مطمئن ہے۔</string>
@@ -70,16 +70,22 @@
     <string name="mount_failed">ماؤنٹ ناکام ہوگیا۔</string>
     <string name="selinux_permissive">SELinux کی اجازت ہے۔</string>
     <string name="sepolicy_incorrect">SELinux پالیسی غلط ہے۔</string>
-    <string name="parasitic_recommend">پرجیوی مینیجر کی سفارش</string>
-    <string name="parasitic_recommend_summary">LSPosed اب سراغ لگانے سے بچنے کے لیے سسٹم پیراجیٹائزیشن کی حمایت کرتا ہے۔ پرجیوی مینیجر کا شارٹ کٹ کامیابی سے بنانے کے بعد آپ منیجر کو محفوظ طریقے سے انسٹال کر سکتے ہیں۔ کسی بھی صورت میں آپ آدمی کو انسٹال کر سکتے ہیں.</string>
-    <string name="create_shortcut">شارٹ کٹ بنانا</string>
-    <string name="never_show">کبھی نہ دکھائیں۔</string>
     <string name="update_lsposed">LSPosed کو اپ ڈیٹ کریں۔</string>
     <string name="update_lsposed_msg">LSPosed کو اپ ڈیٹ کرنے کی تصدیق کریں؟ یہ آلہ اپ ڈیٹ مکمل ہونے کے بعد دوبارہ شروع ہو جائے گا۔</string>
+    <string name="info_copied">کلپ بورڈ پر کاپی ہو گیا۔</string>
+    <!-- WelcomeDialog -->
+    <string name="parasitic_welcome">LSPosed میں خوش آمدید</string>
+    <string name="parasitic_welcome_summary">آپ پرجیوی مینیجر کا استعمال کر رہے ہیں، جو شارٹ کٹ بنا سکتا ہے یا پھر بھی اطلاع سے کھل سکتا ہے۔</string>
+    <string name="parasitic_welcome_summary_no_shortcut_support">آپ پرجیوی مینیجر استعمال کر رہے ہیں، جو اطلاع سے کھل سکتا ہے۔</string>
+    <string name="create_shortcut">شارٹ کٹ بنانا</string>
+    <string name="never_show">کبھی نہ دکھائیں۔</string>
+    <string name="app_welcome">پرجیوی مینیجر کی سفارش</string>
+    <string name="app_welcome_summary">LSPosed اب پتہ لگانے سے بچنے کے لیے سسٹم پرجیوی کی حمایت کرتا ہے، آپ نوٹیفکیشن سے پرجیوی مینیجر کو کھول سکتے ہیں۔ موجودہ ایپلیکیشن کو ان انسٹال کرنے کی سفارش کی جاتی ہے۔</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">محفوظ کریں</string>
     <string name="nav_item_logs_verbose">وربوز لاگز</string>
     <string name="nav_item_logs_module">ماڈیولز نوشتہ جات</string>
+    <string name="logs_saving">لاگ محفوظ کر رہا ہے، براہ کرم انتظار کریں۔</string>
     <string name="logs_saved">لاگز محفوظ ہو گئے۔</string>
     <string name="logs_save_failed2">محفوظ کرنے میں ناکام:\n%s</string>
     <string name="menuClearLog">ابھی لاگ صاف کریں۔</string>
@@ -87,7 +93,6 @@
     <string name="scroll_top">اوپر سکرول کریں۔</string>
     <string name="loading">لوڈ ہو رہا ہے…</string>
     <string name="scroll_bottom">نیچے سکرول کریں۔</string>
-    <string name="logs_cannot_read">لاگ نہیں پڑھ سکتا: \n</string>
     <string name="menuReload">دوبارہ لوڈ کریں۔</string>
     <string name="logs_clear_failed_2">لاگ کو صاف کرنے میں ناکام</string>
     <string name="menu_enable_word_wrap">لفظ لفاف</string>
@@ -96,6 +101,7 @@
     <!-- ModulesActivity -->
     <string name="module_empty_description">(کوئی تفصیل فراہم نہیں کی گئی)</string>
     <string name="warning_xposed_min_version">اس ماڈیول کے لیے ایک نئے Xposed ورژن (%d) کی ضرورت ہے اور اس طرح اسے چالو نہیں کیا جا سکتا</string>
+    <string name="warning_target_version_higher">یہ ماڈیول ایک نئے Xposed ورژن (%d) کے لیے ڈیزائن کیا گیا ہے اور اس طرح کچھ افعال کام نہیں کر سکتے</string>
     <string name="no_min_version_specified">یہ ماڈیول اس Xposed ورژن کی وضاحت نہیں کرتا جس کی اسے ضرورت ہے۔</string>
     <string name="warning_min_version_too_low">یہ ماڈیول Xposed ورژن %1$dکے لیے بنایا گیا تھا، لیکن ورژن %2$dمیں غیر موافق تبدیلیوں کی وجہ سے، اسے غیر فعال کر دیا گیا ہے۔</string>
     <string name="warning_installed_on_external_storage">اس ماڈیول کو لوڈ نہیں کیا جا سکتا کیونکہ یہ SD کارڈ پر انسٹال ہے، براہ کرم اسے اندرونی اسٹوریج میں منتقل کریں۔</string>
@@ -158,7 +164,8 @@
     <string name="list_empty">¯\\\\_(ツ)_\/¯\nیہاں کچھ نہیں ہے۔</string>
     <!-- SettingsActivity -->
     <string name="settings_group_framework">فریم ورک</string>
-    <string name="pref_title_disable_verbose_log">وربوز لاگز کو غیر فعال کریں۔</string>
+    <string name="settings_disable_verbose_log">وربوز لاگز کو غیر فعال کریں۔</string>
+    <string name="settings_disable_verbose_log_summary">وربوز لاگز کو شامل کرنے کے لیے مسائل کی اطلاع دیں۔</string>
     <string name="pure_black_dark_theme">سیاہ سیاہ تھیم</string>
     <string name="pure_black_dark_theme_summary">اگر سیاہ تھیم فعال ہو تو خالص سیاہ تھیم استعمال کریں۔</string>
     <string name="settings_group_theme">خیالیہ</string>
@@ -182,15 +189,18 @@
     <string name="settings_translation_contributors">ترجمہ کرنے والے</string>
     <string name="settings_translation">ترجمہ میں حصہ لیں۔</string>
     <string name="settings_translation_summary">%s کا اپنی زبان میں ترجمہ کرنے میں ہماری مدد کریں۔</string>
-    <string name="pref_title_enable_auto_add_shortcut">خودکار طور پر ایک شارٹ کٹ شامل کریں۔</string>
-    <string name="create_shortcut_summary">دستی طور پر پرجیوی مینیجر شارٹ کٹ بنائیں</string>
-    <string name="settings_enable_auto_add_shortcut_summary">غیر پرجیوی مینیجر میں غیر فعال ہونے پر کوئی نیا شارٹ کٹ شامل نہیں کیا جائے گا۔</string>
+    <string name="settings_create_shortcut_summary">ایک شارٹ کٹ بنائیں جو پرجیوی مینیجر کو کھول سکے۔</string>
+    <string name="settings_shortcut_pinned_hint">شارٹ کٹ پن کر دیا گیا۔</string>
+    <string name="settings_unsupported_pin_shortcut_summary">موجودہ ڈیفالٹ لانچر پن شارٹ کٹس کو سپورٹ نہیں کرتا ہے۔</string>
+    <string name="settings_enable_status_notification">اسٹیٹس کی اطلاع</string>
+    <string name="settings_enable_status_notification_summary">ایک اطلاع دکھائیں جو پرجیوی مینیجر کو کھول سکے۔</string>
+    <string name="disable_status_notification_error">کوئی شارٹ کٹ نہیں، اطلاع کو غیر فعال نہیں کر سکتا</string>
     <string name="settings_update_channel">چینل کو اپ ڈیٹ کریں۔</string>
     <string name="update_channel_stable">مستحکم</string>
     <string name="update_channel_bate">بیٹا</string>
     <string name="update_channel_nightly">رات کی تعمیر</string>
-    <string name="pref_title_restrict_classloader">صرف ماڈیول کلاس لوڈر ہی Xposed API استعمال کر سکتا ہے۔</string>
-    <string name="pref_summary_restrict_classloader">اس سے کچھ ماڈیول ٹوٹ سکتے ہیں لیکن سیکورٹی کو فائدہ پہنچ سکتا ہے (تجرباتی خصوصیت)</string>
+    <string name="settings_xposed_api_call_protection">Xposed API کال تحفظ</string>
+    <string name="settings_xposed_api_call_protection_summary">ایکسپوزڈ API استعمال کرنے کے لیے متحرک طور پر بھرے ہوئے ماڈیول کوڈ کو بلاک کریں، اس سے کچھ ماڈیول ٹوٹ سکتے ہیں لیکن سیکیورٹی کو فائدہ پہنچ سکتا ہے</string>
     <!-- Module Repo -->
     <string name="module_readme">ریڈمی</string>
     <string name="module_releases">جاری کرتا ہے۔</string>
@@ -200,18 +210,15 @@
     <string name="module_information_collaborators">تعاون کرنے والے</string>
     <string name="module_release_view_assets">اثاثے</string>
     <string name="menu_open_in_browser">براؤزر میں کھولیں</string>
-    <string name="refresh">ریفریش کریں۔</string>
     <string name="module_release_load_more">پرانے ورژن دکھائیں۔</string>
     <string name="module_release_no_more">مزید رہائی نہیں ہے۔</string>
     <string name="repo_load_failed">ماڈیول ریپو لوڈ کرنے میں ناکام: %s</string>
     <string name="sort_upgradable_first">پہلے اپ گریڈ کیا جا سکتا ہے۔</string>
-    <!-- CrashReportActivity -->
-    <string name="version_mismatch">LSPosed فریم ورک (%1$d) کا ورژن مینیجر (%2$d) سے میل نہیں کھاتا۔ براہ کرم LSPosed کو دوبارہ انسٹال کریں۔</string>
-    <string name="manager_crashed">مینیجر کریش ہو گیا۔</string>
-    <string name="manager_crashed_info">اس کو رپورٹ کریں </string>
-    <string name="send_crash_info">حادثے کی معلومات بھیجیں۔</string>
-    <string name="crash_info_copied">کریش کی معلومات کلپ بورڈ پر کاپی ہو گئی۔</string>
-    <string name="info_copied">کلپ بورڈ پر کاپی ہو گیا۔</string>
+    <string name="installed">انسٹال</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d ڈاؤن لوڈ</item>
+        <item quantity="other">%d ڈاؤن لوڈز</item>
+    </plurals>
     <!-- Colors -->
     <string name="color_sakura">ساکورا</string>
     <string name="color_red">سرخ</string>

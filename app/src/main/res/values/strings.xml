@@ -19,7 +19,6 @@
 
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
     <!-- MainActivity -->
-    <string name="info">Info</string>
     <string name="overview">Overview</string>
     <string name="Modules">Modules</string>
     <plurals name="modules_enabled_count">
@@ -32,8 +31,9 @@
     <string name="About">About</string>
     <string name="report_issue">Report issue</string>
     <string name="module_repo">Repository</string>
-    <string name="module_repo_loading">Loading…</string>
     <string name="module_repo_up_to_date">All modules up to date</string>
+    <string name="module_repo_published_time">Published at %s</string>
+    <string name="module_repo_updated_time">Updated at %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d module upgradable</item>
         <item quantity="other">%d modules upgradable</item>
@@ -48,22 +48,24 @@
     <string name="activated">Activated</string>
     <string name="partial_activated">Partially activated</string>
     <string name="selinux_policy_not_loaded_summary">SEPolicy is not loaded properly</string>
-    <string name="selinux_policy_not_loaded"><![CDATA[Modules that hook System Framework will not work.<br/>Please report this to <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a> developer.]]></string>
+    <string name="selinux_policy_not_loaded"><![CDATA[Some features will not work.<br/>Please report this to <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a> developer.]]></string>
     <string name="system_inject_fail_summary">System Framework injection failed</string>
     <string name="system_inject_fail"><![CDATA[This is rare and may be caused by <b>Magisk</b> or some low-quality Magisk modules.<br/>Please try to disable Magisk modules other than Riru and LSPosed or submit full log to developers.]]></string>
     <string name="system_prop_incorrect_summary">System prop incorrect</string>
     <string name="system_prop_incorrect"><![CDATA[Some necessary system properties deleted or modified.<br/>Modules may invalidate occasionally.]]></string>
     <string name="need_update">Need to update</string>
     <string name="please_update_summary">Please install the latest version of LSPosed</string>
-    <string name="lsposed_not_active">LSPosed is not currently installed or active.</string>
+    <string name="developer_warning_title">Tips for module developer</string>
+    <string name="developer_warning_summary">Please disable deploy optimizations on Android Studio, or use `gradlew installDebug` command to install. Otherwise the module apk will not be updated.</string>
     <string name="info_api_version">API version</string>
     <string name="info_framework_version">Framework version</string>
-    <string name="info_manager_version">Manager version</string>
+    <string name="info_manager_package_name">Manager package name</string>
     <string name="info_system_version">System version</string>
     <string name="info_device">Device</string>
     <string name="info_system_abi">System ABI</string>
-    <string name="info_api">Injection Interface</string>
     <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
+    <string name="enabled">Enabled</string>
+    <string name="not_enabled">Not enabled</string>
     <string name="supported">Supported</string>
     <string name="unsupported">Unsupported</string>
     <string name="android_version_unsatisfied">Android version unsatisfied</string>
@@ -71,17 +73,24 @@
     <string name="mount_failed">Mount failed</string>
     <string name="selinux_permissive">SELinux is permissive</string>
     <string name="sepolicy_incorrect">SELinux policy is incorrect</string>
-    <string name="parasitic_recommend">Parasitic Manager Recommended</string>
-    <string name="parasitic_recommend_summary">LSPosed now supports system parasitization to avoid detection. You can safely uninstall the manager after successfully creating a shortcut of the parasitic manager. In any case you can install the manager back from /data/adb/lspd/manager.apk.</string>
-    <string name="create_shortcut">Create shortcut</string>
-    <string name="never_show">Never show</string>
     <string name="update_lsposed">Update LSPosed</string>
     <string name="update_lsposed_msg">Confirm to update LSPosed? This device will reboot after update completion</string>
+    <string name="info_copied">Copied to clipboard</string>
+
+    <!-- WelcomeDialog -->
+    <string name="parasitic_welcome">Welcome to LSPosed</string>
+    <string name="parasitic_welcome_summary">You are using the parasitic manager, which can create shortcut or still open from notification.</string>
+    <string name="parasitic_welcome_summary_no_shortcut_support">You are using the parasitic manager, which can open from notification.</string>
+    <string name="create_shortcut">Create shortcut</string>
+    <string name="never_show">Never show</string>
+    <string name="app_welcome">Parasitic Manager Recommended</string>
+    <string name="app_welcome_summary">LSPosed now supports system parasitization to avoid detection, you can open parasitic manager from notification. It is recommended to uninstall the current application.</string>
 
     <!-- LogsActivity -->
     <string name="menuSaveToSd">Save</string>
     <string name="nav_item_logs_verbose">Verbose Logs</string>
     <string name="nav_item_logs_module">Modules Logs</string>
+    <string name="logs_saving">Saving log, please wait</string>
     <string name="logs_saved">Logs saved</string>
     <string name="logs_save_failed2">Failed to save:\n%s</string>
     <string name="menuClearLog">Clear log now</string>
@@ -89,7 +98,6 @@
     <string name="scroll_top">Scroll to top</string>
     <string name="loading">Loading…</string>
     <string name="scroll_bottom">Scroll to bottom</string>
-    <string name="logs_cannot_read">Cannot read log: \n</string>
     <string name="menuReload">Reload</string>
     <string name="logs_clear_failed_2">Failed to clear the log</string>
     <string name="menu_enable_word_wrap">Word Wrap</string>
@@ -99,6 +107,7 @@
     <!-- ModulesActivity -->
     <string name="module_empty_description">(no description provided)</string>
     <string name="warning_xposed_min_version">This module requires a newer Xposed version (%d) and thus cannot be activated</string>
+    <string name="warning_target_version_higher">This module is designed for a newer Xposed version (%d) and thus some functionalities may not work</string>
     <string name="no_min_version_specified">This module does not specify the Xposed version it needs.</string>
     <string name="warning_min_version_too_low">This module was created for Xposed version %1$d, but due to incompatible changes in version %2$d, it has been disabled</string>
     <string name="warning_installed_on_external_storage">This module cannot be loaded because it\'s installed on the SD card, please move it to internal storage</string>
@@ -160,11 +169,12 @@
     <!-- ModulesActivity and AppListActivity -->
     <string name="modules_other_app">View in other app</string>
     <string name="module_app_info">App info</string>
-    <string name="list_empty">¯\\\\_(ツ)_\/¯\nNothing here</string>
+    <string name="list_empty">¯\\_(ツ)_\/¯\nNothing here</string>
 
     <!-- SettingsActivity -->
     <string name="settings_group_framework">Framework</string>
-    <string name="pref_title_disable_verbose_log">Disable verbose logs</string>
+    <string name="settings_disable_verbose_log">Disable verbose logs</string>
+    <string name="settings_disable_verbose_log_summary">Report issues request to include verbose logs</string>
     <string name="pure_black_dark_theme">Black dark theme</string>
     <string name="pure_black_dark_theme_summary">Use the pure black theme if dark theme is enabled</string>
     <string name="settings_group_theme">Theme</string>
@@ -188,15 +198,18 @@
     <string name="settings_translation_contributors">Translation contributors</string>
     <string name="settings_translation">Participate in translation</string>
     <string name="settings_translation_summary">Help us translate %s into your language</string>
-    <string name="pref_title_enable_auto_add_shortcut">Automatically add a shortcut</string>
-    <string name="create_shortcut_summary">Manually create parasitic manager shortcut</string>
-    <string name="settings_enable_auto_add_shortcut_summary">No new shortcuts will be added when disabled in the non-parasitic manager</string>
+    <string name="settings_create_shortcut_summary">Create a shortcut that can open parasitic manager</string>
+    <string name="settings_shortcut_pinned_hint">Shortcut pinned</string>
+    <string name="settings_unsupported_pin_shortcut_summary">The current default launcher does not support pin shortcuts</string>
+    <string name="settings_enable_status_notification">Status Notification</string>
+    <string name="settings_enable_status_notification_summary">Show a notification that can open parasitic manager</string>
+    <string name="disable_status_notification_error">No shortcut, cannot disable notification</string>
     <string name="settings_update_channel">Update channel</string>
     <string name="update_channel_stable">Stable</string>
     <string name="update_channel_bate">Beta</string>
     <string name="update_channel_nightly">Nightly build</string>
-    <string name="pref_title_restrict_classloader">Only module classloader can use Xposed API</string>
-    <string name="pref_summary_restrict_classloader">This may break some modules but benefit security (experimental feature)</string>
+    <string name="settings_xposed_api_call_protection">Xposed API call protection</string>
+    <string name="settings_xposed_api_call_protection_summary">Block dynamically loaded module code to use Xposed API, this may break some modules but benefit security</string>
 
     <!-- Module Repo -->
     <string name="module_readme">Readme</string>
@@ -207,19 +220,15 @@
     <string name="module_information_collaborators">Collaborators</string>
     <string name="module_release_view_assets">Assets</string>
     <string name="menu_open_in_browser">Open in browser</string>
-    <string name="refresh">Refresh</string>
     <string name="module_release_load_more">Show older versions</string>
     <string name="module_release_no_more">No more release</string>
     <string name="repo_load_failed">Failed to load module repo: %s</string>
     <string name="sort_upgradable_first">Upgradable first</string>
-
-    <!-- CrashReportActivity -->
-    <string name="version_mismatch">The version of the LSPosed framework (%1$d) does not match manager (%2$d). Please reinstall LSPosed.</string>
-    <string name="manager_crashed">Manager crashed</string>
-    <string name="manager_crashed_info">report this to </string>
-    <string name="send_crash_info">Send crash info</string>
-    <string name="crash_info_copied">Crash info copied to clipboard</string>
-    <string name="info_copied">Copied to clipboard</string>
+    <string name="installed">Installed</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d download</item>
+        <item quantity="other">%d downloads</item>
+    </plurals>
 
     <!-- Colors -->
     <string name="color_sakura">Sakura</string>
@@ -241,4 +250,5 @@
     <string name="color_deep_orange">Deep orange</string>
     <string name="color_brown">Brown</string>
     <string name="color_blue_grey">Blue grey</string>
+
 </resources>

@@ -18,7 +18,7 @@
  */
 
 plugins {
-    id("com.android.library")
+    alias(libs.plugins.agp.lib)
 }
 
 android {
@@ -28,6 +28,7 @@ android {
         androidResources = false
         buildConfig = false
         prefab = true
+        prefabPublishing = true
     }
 
     defaultConfig {
@@ -38,5 +39,9 @@ android {
         cmake {
             path("src/main/cpp/CMakeLists.txt")
         }
+    }
+
+    prefab {
+        register("dex2oat")
     }
 }

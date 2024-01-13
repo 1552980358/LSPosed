@@ -24,7 +24,7 @@
 #include <array>
 #include "logging.h"
 #include "loader.h"
-#include "ConfigImpl.h"
+#include "config_impl.h"
 #include "magisk_loader.h"
 #include "symbol_cache.h"
 
@@ -37,11 +37,11 @@ namespace lspd {
         std::string magiskPath;
 
         jstring nice_name = nullptr;
+        jstring app_dir = nullptr;
 
         void onModuleLoaded() {
             LOGI("onModuleLoaded: welcome to LSPosed!");
             LOGI("onModuleLoaded: version v{} ({})", versionName, versionCode);
-            InitSymbolCache(nullptr);
             MagiskLoader::Init();
             ConfigImpl::Init();
         }
@@ -58,6 +58,7 @@ namespace lspd {
                                         jboolean *,
                                         jboolean *) {
             nice_name = *_nice_name;
+            app_dir = *_app_data_dir;
             MagiskLoader::GetInstance()->OnNativeForkAndSpecializePre(env, *_uid, *gids,
                                                                  nice_name,
                                                                  *start_child_zygote,
@@ -66,7 +67,7 @@ namespace lspd {
 
         void nativeForkAndSpecializePost(JNIEnv *env, jclass, jint res) {
             if (res == 0)
-                MagiskLoader::GetInstance()->OnNativeForkAndSpecializePost(env, nice_name);
+                MagiskLoader::GetInstance()->OnNativeForkAndSpecializePost(env, nice_name, app_dir);
         }
 
         void nativeForkSystemServerPre(JNIEnv *env, jclass, uid_t *, gid_t *,
@@ -93,6 +94,7 @@ namespace lspd {
                                      jboolean *,
                                      jboolean *) {
             nice_name = *_nice_name;
+            app_dir = *_app_data_dir;
             MagiskLoader::GetInstance()->OnNativeForkAndSpecializePre(env, *_uid, *gids,
                                                                  nice_name,
                                                                  *start_child_zygote,
@@ -100,7 +102,7 @@ namespace lspd {
         }
 
         void specializeAppProcessPost(JNIEnv *env, jclass) {
-            MagiskLoader::GetInstance()->OnNativeForkAndSpecializePost(env, nice_name);
+            MagiskLoader::GetInstance()->OnNativeForkAndSpecializePost(env, nice_name, app_dir);
         }
     }
 

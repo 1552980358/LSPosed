@@ -19,7 +19,6 @@
   -->
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
     <!-- MainActivity -->
-    <string name="info">info</string>
     <string name="overview">Overzicht</string>
     <string name="Modules">Modules</string>
     <plurals name="modules_enabled_count">
@@ -32,8 +31,9 @@
     <string name="About">Over</string>
     <string name="report_issue">Probleem melden</string>
     <string name="module_repo">Opslagplaats</string>
-    <string name="module_repo_loading">Laden…</string>
     <string name="module_repo_up_to_date">Alle modules zijn up-to-date</string>
+    <string name="module_repo_published_time">Gepubliceerd op %s</string>
+    <string name="module_repo_updated_time">Bijgewerkt op %s</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d module te upgraden</item>
         <item quantity="other">%d modules te upgraden</item>
@@ -47,22 +47,22 @@
     <string name="activated">Geactiveerd</string>
     <string name="partial_activated">Gedeeltelijk geactiveerd</string>
     <string name="selinux_policy_not_loaded_summary">SEPolicy is niet correct geladen</string>
-    <string name="selinux_policy_not_loaded"><![CDATA[&lt;b&gt;WAARSCHUWING:&lt;\/b&gt; SEPolicy is niet correct geladen, modules die System Framework haken zullen niet werken.]]></string>
+    <string name="selinux_policy_not_loaded"><![CDATA[Sommige functies zullen niet werken.<br/>Gelieve dit te melden aan <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a> ontwikkelaar.]]></string>
     <string name="system_inject_fail_summary">Systeem Framework injectie is mislukt</string>
     <string name="system_inject_fail"><![CDATA[Systeem Framework injectie mislukt.<br/>Dit is zeldzaam en kan worden veroorzaakt door <b>Magisk</b> of sommige Magisk-modules van lage kwaliteit.<br/>Probeer andere Magisk-modules dan Riru en LSPosed uit te schakelen of stuur een volledig logboek naar de ontwikkelaars.]]></string>
     <string name="system_prop_incorrect_summary">Systeem prop incorrect</string>
     <string name="system_prop_incorrect"><![CDATA[Enkele noodzakelijke systeemeigenschappen verwijderd of gewijzigd.<br/>Modules kunnen af en toe ongeldig worden.]]></string>
     <string name="need_update">Bijwerken is nodig</string>
     <string name="please_update_summary">Installeer de laatste versie van LSPosed</string>
-    <string name="lsposed_not_active">LSPosed is momenteel niet geïnstalleerd of actief.</string>
     <string name="info_api_version">API versie</string>
     <string name="info_framework_version">Framework versie</string>
-    <string name="info_manager_version">Manager versie</string>
+    <string name="info_manager_package_name">Naam beheerderspakket</string>
     <string name="info_system_version">Systeem versie</string>
     <string name="info_device">Apparaat</string>
     <string name="info_system_abi">Systeem ABI</string>
-    <string name="info_api">Injectie interface</string>
     <string name="info_dex2oat_wrapper">Dex Optimizer Wrapper</string>
+    <string name="enabled">Ingeschakeld</string>
+    <string name="not_enabled">Niet ingeschakeld</string>
     <string name="supported">Ondersteund</string>
     <string name="unsupported">Niet-ondersteunde</string>
     <string name="android_version_unsatisfied">Android versie onbevredigd</string>
@@ -70,16 +70,22 @@
     <string name="mount_failed">Berg mislukt</string>
     <string name="selinux_permissive">SELinux is permissief</string>
     <string name="sepolicy_incorrect">SELinux beleid is onjuist</string>
-    <string name="parasitic_recommend">Parasitaire manager aanbevolen</string>
-    <string name="parasitic_recommend_summary">LSPosed ondersteunt nu parasitisering van het systeem om detectie te voorkomen. U kunt de manager veilig deïnstalleren na het maken van een snelkoppeling van de parastische manager. In elk geval kunt u de manager installeren vanuit /data/adb/lspd/manager.apk.</string>
-    <string name="create_shortcut">Snelkoppeling maken</string>
-    <string name="never_show">Nooit tonen</string>
     <string name="update_lsposed">Update LSPosed</string>
     <string name="update_lsposed_msg">Bevestig bijwerken van LSPosed? Dit apparaat zal opnieuw opstarten nadat de update is voltooid</string>
+    <string name="info_copied">Gekopieerd naar klembord</string>
+    <!-- WelcomeDialog -->
+    <string name="parasitic_welcome">Welkom bij LSPosed</string>
+    <string name="parasitic_welcome_summary">U gebruikt de parasitaire manager, die een snelkoppeling kan maken of nog steeds kan openen vanuit een melding.</string>
+    <string name="parasitic_welcome_summary_no_shortcut_support">Je gebruikt de parasiterende manager, die kan openen vanuit de melding.</string>
+    <string name="create_shortcut">Snelkoppeling maken</string>
+    <string name="never_show">Nooit tonen</string>
+    <string name="app_welcome">Parasitaire manager aanbevolen</string>
+    <string name="app_welcome_summary">LSPosed ondersteunt nu systeemparasitisatie om detectie te voorkomen, u kunt parasitaire manager openen vanuit een melding. Het wordt aanbevolen om de huidige applicatie te verwijderen.</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">Opslaan</string>
     <string name="nav_item_logs_verbose">Uitgebreide logs</string>
     <string name="nav_item_logs_module">Modules Logbestanden</string>
+    <string name="logs_saving">Logboek wordt opgeslagen, even geduld a.u.b.</string>
     <string name="logs_saved">Opgeslagen logboeken</string>
     <string name="logs_save_failed2">Opslaan mislukt:\n%s</string>
     <string name="menuClearLog">Wis het logboek nu</string>
@@ -87,7 +93,6 @@
     <string name="scroll_top">Scroll naar boven</string>
     <string name="loading">Laden…</string>
     <string name="scroll_bottom">Scroll naar beneden</string>
-    <string name="logs_cannot_read">Kan logboek niet lezen: \n</string>
     <string name="menuReload">Herlaad</string>
     <string name="logs_clear_failed_2">Het logboek kan niet worden gewist</string>
     <string name="menu_enable_word_wrap">Woord Omslag</string>
@@ -96,6 +101,7 @@
     <!-- ModulesActivity -->
     <string name="module_empty_description">(geen beschrijving gegeven)</string>
     <string name="warning_xposed_min_version">Deze module vereist een nieuwere versie van Lsposed (%d) en kan dus niet worden geactiveerd</string>
+    <string name="warning_target_version_higher">Deze module is ontworpen voor een nieuwere Xposed-versie (%d) en daarom werken sommige functionaliteiten mogelijk niet</string>
     <string name="no_min_version_specified">Deze module heeft geen vereiste versie voor Xposed opgegeven.</string>
     <string name="warning_min_version_too_low">Deze module is gemaakt voor de Lsposed-versie %1$d, maar vanwege onverenigbare wijzigingen in de versie %2$d, is het uitgeschakeld</string>
     <string name="warning_installed_on_external_storage">Deze module kan niet worden geladen omdat deze op de SD-kaart is geïnstalleerd. Verplaats deze naar de interne opslag</string>
@@ -158,7 +164,8 @@
     <string name="list_empty">¯\\\\_(ツ)_\/¯\nNiets hier</string>
     <!-- SettingsActivity -->
     <string name="settings_group_framework">Framework</string>
-    <string name="pref_title_disable_verbose_log">Schakel uitgebreide logboeken uit</string>
+    <string name="settings_disable_verbose_log">Schakel uitgebreide logboeken uit</string>
+    <string name="settings_disable_verbose_log_summary">Rapporteer problemen verzoek om uitgebreide logboeken op te nemen</string>
     <string name="pure_black_dark_theme">Zwarte donkere thema</string>
     <string name="pure_black_dark_theme_summary">Gebruik het pure zwarte thema als het donkere thema is ingeschakeld</string>
     <string name="settings_group_theme">Thema</string>
@@ -182,15 +189,18 @@
     <string name="settings_translation_contributors">Bijdragers van vertalingen</string>
     <string name="settings_translation">Deelnemen aan vertaling</string>
     <string name="settings_translation_summary">Help ons %s te vertalen in uw taal</string>
-    <string name="pref_title_enable_auto_add_shortcut">Snelkoppeling automatisch toevoegen</string>
-    <string name="create_shortcut_summary">Maak handmatig een snelkoppeling naar parasitic manager</string>
-    <string name="settings_enable_auto_add_shortcut_summary">Er zullen geen nieuwe snelkoppelingen worden toegevoegd wanneer uitgeschakeld in de niet-parasitaire manager</string>
+    <string name="settings_create_shortcut_summary">Maak een snelkoppeling die parasitaire manager kan openen</string>
+    <string name="settings_shortcut_pinned_hint">Snelkoppeling vastgezet</string>
+    <string name="settings_unsupported_pin_shortcut_summary">De huidige standaard launcher ondersteunt geen pin-snelkoppelingen</string>
+    <string name="settings_enable_status_notification">Statusmelding</string>
+    <string name="settings_enable_status_notification_summary">Toon een melding die parasitaire manager kan openen</string>
+    <string name="disable_status_notification_error">Geen snelkoppeling, kan melding niet uitschakelen</string>
     <string name="settings_update_channel">Kanaal bijwerken</string>
     <string name="update_channel_stable">Stabiel</string>
     <string name="update_channel_bate">Bèta</string>
     <string name="update_channel_nightly">Nachtelijke bouw</string>
-    <string name="pref_title_restrict_classloader">Alleen module classloader kan Xposed API gebruiken</string>
-    <string name="pref_summary_restrict_classloader">Dit kan sommige modules breken maar de veiligheid ten goede komen (experimentele functie)</string>
+    <string name="settings_xposed_api_call_protection">Xposed API-oproepbeveiliging</string>
+    <string name="settings_xposed_api_call_protection_summary">Blokkeer dynamisch geladen modulecode om Xposed API te gebruiken, dit kan sommige modules breken maar komt de veiligheid ten goede</string>
     <!-- Module Repo -->
     <string name="module_readme">Leesmij</string>
     <string name="module_releases">Publicaties</string>
@@ -200,18 +210,15 @@
     <string name="module_information_collaborators">Medewerkers</string>
     <string name="module_release_view_assets">Middelen</string>
     <string name="menu_open_in_browser">Open in de browser</string>
-    <string name="refresh">Vernieuwen</string>
     <string name="module_release_load_more">Laat oudere versies zien</string>
     <string name="module_release_no_more">Geen release meer</string>
     <string name="repo_load_failed">Kan moduleopslagplaats niet laden: %1$s</string>
     <string name="sort_upgradable_first">Eerst te upgraden</string>
-    <!-- CrashReportActivity -->
-    <string name="version_mismatch">De versie van het LSPosed framework (%1$d) komt niet overeen met manager (%2$d). Herinstalleer LSPosed.</string>
-    <string name="manager_crashed">Manager gecrasht</string>
-    <string name="manager_crashed_info">meld dit aan </string>
-    <string name="send_crash_info">Stuur crash informatie</string>
-    <string name="crash_info_copied">Crash informatie naar klembord gekopieerd</string>
-    <string name="info_copied">Gekopieerd naar klembord</string>
+    <string name="installed">Geïnstalleerd</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d download</item>
+        <item quantity="other">%d downloads</item>
+    </plurals>
     <!-- Colors -->
     <string name="color_sakura">Sakura</string>
     <string name="color_red">Rood</string>

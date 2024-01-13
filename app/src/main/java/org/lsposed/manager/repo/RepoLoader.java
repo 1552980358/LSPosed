@@ -20,6 +20,7 @@
 
 package org.lsposed.manager.repo;
 
+import android.content.res.Resources;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -28,16 +29,20 @@ import androidx.annotation.Nullable;
 import com.google.gson.Gson;
 
 import org.lsposed.manager.App;
+import org.lsposed.manager.R;
 import org.lsposed.manager.repo.model.OnlineModule;
+import org.lsposed.manager.repo.model.Release;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,7 +68,7 @@ public class RepoLoader {
         }
 
         public boolean upgradable(long versionCode, String versionName) {
-            return this.versionCode > versionCode || (this.versionCode == versionCode && !versionName.equals(this.versionName));
+            return this.versionCode > versionCode || (this.versionCode == versionCode && !versionName.replace(' ', '_').equals(this.versionName));
         }
 
     }
@@ -72,8 +77,12 @@ public class RepoLoader {
     private final Set<RepoListener> listeners = ConcurrentHashMap.newKeySet();
     private boolean repoLoaded = false;
     private static final String originRepoUrl = "https://modules.lsposed.org/";
-    private static final String backupRepoUrl = "https://cdn.jsdelivr.net/gh/Xposed-Modules-Repo/modules@gh-pages/";
+    private static final String backupRepoUrl = "https://modules-blogcdn.lsposed.org/";
+
+    private static final String secondBackupRepoUrl = "https://modules-cloudflare.lsposed.org/";
     private static String repoUrl = originRepoUrl;
+    private final Resources resources = App.getInstance().getResources();
+    private final String[] channels = resources.getStringArray(R.array.update_channel_values);
 
     public boolean isRepoLoaded() {
         return repoLoaded;
@@ -82,57 +91,28 @@ public class RepoLoader {
     public static synchronized RepoLoader getInstance() {
         if (instance == null) {
             instance = new RepoLoader();
-            App.getExecutorService().submit(instance::loadRemoteData);
+            App.getExecutorService().submit(() -> instance.loadLocalData(true));
         }
         return instance;
     }
 
     synchronized public void loadRemoteData() {
-        repoLoaded = true;
+        repoLoaded = false;
         try {
-            var response = App.getOkHttpClient().newCall(new Request.Builder()
-                    .url(repoUrl + "modules.json")
-                    .build()).execute();
+            try (var response = App.getOkHttpClient().newCall(new Request.Builder().url(repoUrl + "modules.json").build()).execute()) {
 
-            if (response.isSuccessful()) {
-                ResponseBody body = response.body();
-                if (body != null) {
-                    try {
-                        String bodyString = body.string();
-                        Gson gson = new Gson();
-                        Map<String, OnlineModule> modules = new HashMap<>();
-                        OnlineModule[] repoModules = gson.fromJson(bodyString, OnlineModule[].class);
-                        Arrays.stream(repoModules).forEach(onlineModule -> modules.put(onlineModule.getName(), onlineModule));
-
-                        Map<String, ModuleVersion> versions = new ConcurrentHashMap<>();
-                        for (var module : repoModules) {
-                            var release = module.getLatestRelease();
-                            if (release == null || release.isEmpty()) continue;
-                            var splits = release.split("-", 2);
-                            if (splits.length < 2) continue;
-                            long verCode;
-                            String verName;
-                            try {
-                                verCode = Long.parseLong(splits[0]);
-                                verName = splits[1];
-                            } catch (NumberFormatException ignored) {
-                                continue;
+                if (response.isSuccessful()) {
+                    ResponseBody body = response.body();
+                    if (body != null) {
+                        try {
+                            String bodyString = body.string();
+                            Files.write(repoFile, bodyString.getBytes(StandardCharsets.UTF_8));
+                            loadLocalData(false);
+                        } catch (Throwable t) {
+                            Log.e(App.TAG, Log.getStackTraceString(t));
+                            for (RepoListener listener : listeners) {
+                                listener.onThrowable(t);
                             }
-                            String pkgName = module.getName();
-                            versions.put(pkgName, new ModuleVersion(verCode, verName));
-                        }
-
-                        latestVersion = versions;
-                        onlineModules = modules;
-                        Files.write(repoFile, bodyString.getBytes(StandardCharsets.UTF_8));
-                        repoLoaded = true;
-                        for (RepoListener listener : listeners) {
-                            listener.onRepoLoaded();
-                        }
-                    } catch (Throwable t) {
-                        Log.e(App.TAG, Log.getStackTraceString(t));
-                        for (RepoListener listener : listeners) {
-                            listener.onThrowable(t);
                         }
                     }
                 }
@@ -142,13 +122,83 @@ public class RepoLoader {
             for (RepoListener listener : listeners) {
                 listener.onThrowable(e);
             }
-            if (!repoUrl.equals(backupRepoUrl)) {
+            if (repoUrl.equals(originRepoUrl)) {
                 repoUrl = backupRepoUrl;
                 loadRemoteData();
+            } else if (repoUrl.equals(backupRepoUrl)) {
+                repoUrl = secondBackupRepoUrl;
+                loadRemoteData();
+            }
+        }
+    }
+
+    synchronized public void loadLocalData(boolean updateRemoteRepo) {
+        repoLoaded = false;
+        try {
+            if (Files.notExists(repoFile)) {
+                loadRemoteData();
+                updateRemoteRepo = false;
+            }
+            byte[] encoded = Files.readAllBytes(repoFile);
+            String bodyString = new String(encoded, StandardCharsets.UTF_8);
+            Gson gson = new Gson();
+            Map<String, OnlineModule> modules = new HashMap<>();
+            OnlineModule[] repoModules = gson.fromJson(bodyString, OnlineModule[].class);
+            Arrays.stream(repoModules).forEach(onlineModule -> modules.put(onlineModule.getName(), onlineModule));
+            var channel = App.getPreferences().getString("update_channel", channels[0]);
+            updateLatestVersion(repoModules, channel);
+            onlineModules = modules;
+        } catch (Throwable t) {
+            Log.e(App.TAG, Log.getStackTraceString(t));
+            for (RepoListener listener : listeners) {
+                listener.onThrowable(t);
             }
         } finally {
             repoLoaded = true;
+            for (RepoListener listener : listeners) {
+                listener.onRepoLoaded();
+            }
+            if (updateRemoteRepo) loadRemoteData();
         }
+    }
+
+    synchronized private void updateLatestVersion(OnlineModule[] onlineModules, String channel) {
+        repoLoaded = false;
+        Map<String, ModuleVersion> versions = new ConcurrentHashMap<>();
+        for (var module : onlineModules) {
+            String release = module.getLatestRelease();
+            if (channel.equals(channels[1]) && module.getLatestBetaRelease() != null && !module.getLatestBetaRelease().isEmpty()) {
+                release = module.getLatestBetaRelease();
+            } else if (channel.equals(channels[2])) {
+                if (module.getLatestSnapshotRelease() != null && !module.getLatestSnapshotRelease().isEmpty())
+                    release = module.getLatestSnapshotRelease();
+                else if (module.getLatestBetaRelease() != null && !module.getLatestBetaRelease().isEmpty())
+                    release = module.getLatestBetaRelease();
+            }
+            if (release == null || release.isEmpty()) continue;
+            var splits = release.split("-", 2);
+            if (splits.length < 2) continue;
+            long verCode;
+            String verName;
+            try {
+                verCode = Long.parseLong(splits[0]);
+                verName = splits[1];
+            } catch (NumberFormatException ignored) {
+                continue;
+            }
+            String pkgName = module.getName();
+            versions.put(pkgName, new ModuleVersion(verCode, verName));
+        }
+        latestVersion = versions;
+        repoLoaded = true;
+        for (RepoListener listener : listeners) {
+            listener.onRepoLoaded();
+        }
+    }
+
+    public void updateLatestVersion(String channel) {
+        if (repoLoaded)
+            updateLatestVersion(onlineModules.keySet().parallelStream().map(onlineModules::get).toArray(OnlineModule[]::new), channel);
     }
 
     @Nullable
@@ -156,15 +206,57 @@ public class RepoLoader {
         return repoLoaded ? latestVersion.getOrDefault(packageName, null) : null;
     }
 
+    @Nullable
+    public List<Release> getReleases(String packageName) {
+        var channel = App.getPreferences().getString("update_channel", channels[0]);
+        List<Release> releases = new ArrayList<>();
+        if (repoLoaded) {
+            var module = onlineModules.get(packageName);
+            if (module != null) {
+                releases = module.getReleases();
+                if (!module.releasesLoaded) {
+                    if (channel.equals(channels[1]) && !(module.getBetaReleases() != null && module.getBetaReleases().isEmpty())) {
+                        releases = module.getBetaReleases();
+                    } else if (channel.equals(channels[2]))
+                        if (!(module.getSnapshotReleases() != null && module.getSnapshotReleases().isEmpty()))
+                            releases = module.getSnapshotReleases();
+                        else if (!(module.getBetaReleases() != null && module.getBetaReleases().isEmpty()))
+                            releases = module.getBetaReleases();
+                }
+            }
+        }
+        return releases;
+    }
+
+    @Nullable
+    public String getLatestReleaseTime(String packageName, String channel) {
+        String releaseTime = null;
+        if (repoLoaded) {
+            var module = onlineModules.get(packageName);
+            if (module != null) {
+                releaseTime = module.getLatestReleaseTime();
+                if (channel.equals(channels[1]) && module.getLatestBetaReleaseTime() != null) {
+                    releaseTime = module.getLatestBetaReleaseTime();
+                } else if (channel.equals(channels[2]))
+                    if (module.getLatestSnapshotReleaseTime() != null)
+                        releaseTime = module.getLatestSnapshotReleaseTime();
+                    else if (module.getLatestBetaReleaseTime() != null)
+                        releaseTime = module.getLatestBetaReleaseTime();
+            }
+        }
+        return releaseTime;
+    }
+
     public void loadRemoteReleases(String packageName) {
-        App.getOkHttpClient().newCall(new Request.Builder()
-                .url(String.format(repoUrl + "module/%s.json", packageName))
-                .build()).enqueue(new Callback() {
+        App.getOkHttpClient().newCall(new Request.Builder().url(String.format(repoUrl + "module/%s.json", packageName)).build()).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 Log.e(App.TAG, call.request().url() + e.getMessage());
-                if (!repoUrl.equals(backupRepoUrl)) {
+                if (repoUrl.equals(originRepoUrl)) {
                     repoUrl = backupRepoUrl;
+                    loadRemoteReleases(packageName);
+                } else if (repoUrl.equals(backupRepoUrl)) {
+                    repoUrl = secondBackupRepoUrl;
                     loadRemoteReleases(packageName);
                 } else {
                     for (RepoListener listener : listeners) {
@@ -200,8 +292,7 @@ public class RepoLoader {
     }
 
     public void addListener(RepoListener listener) {
-        if (!listeners.contains(listener))
-            listeners.add(listener);
+        listeners.add(listener);
     }
 
     public void removeListener(RepoListener listener) {
@@ -210,7 +301,7 @@ public class RepoLoader {
 
     @Nullable
     public OnlineModule getOnlineModule(String packageName) {
-        return !repoLoaded || packageName == null ? null : onlineModules.get(packageName);
+        return repoLoaded && packageName != null ? onlineModules.get(packageName) : null;
     }
 
     @Nullable

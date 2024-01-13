@@ -21,10 +21,10 @@ package org.lsposed.lspd.service;
 
 import static org.lsposed.lspd.service.ServiceManager.TAG;
 
-import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.ParcelFileDescriptor;
+import android.os.Process;
 import android.os.RemoteException;
 import android.util.Log;
 import android.util.Pair;
@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class LSPApplicationService extends ILSPApplicationService.Stub {
     final static int DEX_TRANSACTION_CODE = 1310096052;
@@ -45,10 +46,10 @@ public class LSPApplicationService extends ILSPApplicationService.Stub {
     private final static Map<Pair<Integer, Integer>, ProcessInfo> processes = new ConcurrentHashMap<>();
 
     static class ProcessInfo implements DeathRecipient {
-        int uid;
-        int pid;
-        String processName;
-        IBinder heartBeat;
+        final int uid;
+        final int pid;
+        final String processName;
+        final IBinder heartBeat;
 
         ProcessInfo(int uid, int pid, String processName, IBinder heartBeat) throws RemoteException {
             this.uid = uid;
@@ -95,7 +96,7 @@ public class LSPApplicationService extends ILSPApplicationService.Stub {
                 var obfuscation = ConfigManager.getInstance().dexObfuscate();
                 var signatures = ObfuscationManager.getSignatures();
                 reply.writeInt(signatures.size() * 2);
-                for(Map.Entry<String,String> entry : signatures.entrySet()){
+                for (Map.Entry<String, String> entry : signatures.entrySet()) {
                     reply.writeString(entry.getKey());
                     // return val = key if obfuscation disabled
                     reply.writeString(obfuscation ? entry.getValue() : entry.getKey());
@@ -115,10 +116,9 @@ public class LSPApplicationService extends ILSPApplicationService.Stub {
         }
     }
 
-    @Override
-    public List<Module> getModulesList() throws RemoteException {
+    private List<Module> getAllModulesList() throws RemoteException {
         var processInfo = ensureRegistered();
-        if (processInfo.uid == 1000 && processInfo.processName.equals("android")) {
+        if (processInfo.uid == Process.SYSTEM_UID && processInfo.processName.equals("system")) {
             return ConfigManager.getInstance().getModulesForSystemServer();
         }
         if (ServiceManager.getManagerService().isRunningManager(processInfo.pid, processInfo.uid))
@@ -127,24 +127,19 @@ public class LSPApplicationService extends ILSPApplicationService.Stub {
     }
 
     @Override
+    public List<Module> getLegacyModulesList() throws RemoteException {
+        return getAllModulesList().stream().filter(m -> m.file.legacy).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Module> getModulesList() throws RemoteException {
+        return getAllModulesList().stream().filter(m -> !m.file.legacy).collect(Collectors.toList());
+    }
+
+    @Override
     public String getPrefsPath(String packageName) throws RemoteException {
         ensureRegistered();
         return ConfigManager.getInstance().getPrefsPath(packageName, getCallingUid());
-    }
-
-    @Override
-    public Bundle requestRemotePreference(String packageName, int userId, IBinder callback) throws RemoteException {
-        ensureRegistered();
-        return null;
-    }
-
-    @Override
-    public IBinder requestModuleBinder(String name) throws RemoteException {
-        var processInfo = ensureRegistered();
-        if (ConfigManager.getInstance().isModule(processInfo.uid, name)) {
-            ConfigManager.getInstance().ensureModulePrefsPermission(processInfo.uid, name);
-            return ServiceManager.getModuleService(name);
-        } else return null;
     }
 
     @Override

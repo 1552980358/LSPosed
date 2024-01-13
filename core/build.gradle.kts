@@ -17,10 +17,11 @@
  * Copyright (C) 2021 - 2022 LSPosed Contributors
  */
 
-val apiCode: Int by rootProject.extra
+val verName: String by rootProject.extra
+val verCode: Int by rootProject.extra
 
 plugins {
-    id("com.android.library")
+    alias(libs.plugins.agp.lib)
 }
 
 android {
@@ -28,12 +29,15 @@ android {
 
     buildFeatures {
         androidResources = false
+        buildConfig = true
     }
 
     defaultConfig {
         consumerProguardFiles("proguard-rules.pro")
 
-        buildConfigField("int", "API_CODE", "$apiCode")
+        buildConfigField("String", "FRAMEWORK_NAME", """"${rootProject.name}"""")
+        buildConfigField("String", "VERSION_NAME", """"$verName"""")
+        buildConfigField("long", "VERSION_CODE", """$verCode""")
     }
 
     buildTypes {
@@ -44,12 +48,20 @@ android {
     }
 }
 
+copy {
+    from("src/main/jni/template/") {
+        expand("VERSION_CODE" to "$verCode", "VERSION_NAME" to verName)
+    }
+    into("src/main/jni/src/")
+}
+
 dependencies {
-    implementation("org.apache.commons:commons-lang3:3.12.0")
-    implementation("de.upb.cs.swt:axml:2.1.2")
-    compileOnly("androidx.annotation:annotation:1.3.0")
-    compileOnly(projects.hiddenapi.stubs)
+    api(libs.libxposed.api)
+    implementation(libs.commons.lang3)
+    implementation(libs.axml)
     implementation(projects.hiddenapi.bridge)
     implementation(projects.services.daemonService)
     implementation(projects.services.managerService)
+    compileOnly(libs.androidx.annotation)
+    compileOnly(projects.hiddenapi.stubs)
 }

@@ -1,18 +1,15 @@
 #!/system/bin/sh
 
 dir=${0%/*}
-magiskPath=$(magisk --path)
 tmpLspdApk="/data/local/tmp/daemon.apk"
 debug=@DEBUG@
 flavor=@FLAVOR@
 
 if [ -r $tmpLspdApk ]; then
   java_options="-Djava.class.path=$tmpLspdApk"
-  java_options="$java_options -Dlsp.library.path=/data/local/tmp"
   debug="true"
 else
   java_options="-Djava.class.path=$dir/daemon.apk"
-  java_options="$java_options -Dlsp.library.path=$dir"
 fi
 
 if [ $debug = "true" ]; then

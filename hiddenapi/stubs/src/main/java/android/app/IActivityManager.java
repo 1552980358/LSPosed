@@ -37,7 +37,16 @@ public interface IActivityManager extends IInterface {
     int broadcastIntentWithFeature(IApplicationThread caller, String callingFeatureId,
                                    Intent intent, String resolvedType, IIntentReceiver resultTo,
                                    int resultCode, String resultData, Bundle resultExtras,
-                                   String[] requiredPermissions, String[] excludedPermissions, int appOp, Bundle bOptions,
+                                   String[] requiredPermissions, String[] excludedPermissions,
+                                   String[] excludePackages, int appOp, Bundle bOptions,
+                                   boolean serialized, boolean sticky, int userId) throws RemoteException;
+
+    @RequiresApi(31)
+    int broadcastIntentWithFeature(IApplicationThread caller, String callingFeatureId,
+                                   Intent intent, String resolvedType, IIntentReceiver resultTo,
+                                   int resultCode, String resultData, Bundle resultExtras,
+                                   String[] requiredPermissions, String[] excludedPermissions,
+                                   int appOp, Bundle bOptions,
                                    boolean serialized, boolean sticky, int userId) throws RemoteException;
 
     @RequiresApi(30)
@@ -80,8 +89,8 @@ public interface IActivityManager extends IInterface {
                             IIntentReceiver receiver, IntentFilter filter,
                             String requiredPermission, int userId, int flags) throws RemoteException;
 
-    void finishReceiver(IBinder who, int resultCode, String resultData, Bundle map,
-                        boolean abortBroadcast, int flags) throws RemoteException;
+    void finishReceiver(IBinder caller, int resultCode, String resultData,
+                        Bundle resultExtras, boolean resultAbort, int flags) throws RemoteException;
 
     @RequiresApi(30)
     Intent registerReceiverWithFeature(IApplicationThread caller, String callerPackage,
@@ -97,6 +106,11 @@ public interface IActivityManager extends IInterface {
                     String resolvedType, IServiceConnection connection, int flags,
                     String callingPackage, int userId) throws RemoteException;
 
+    @RequiresApi(34)
+    int bindService(IApplicationThread caller, IBinder token, Intent service,
+                    String resolvedType, IServiceConnection connection, long flags,
+                    String callingPackage, int userId) throws RemoteException;
+
     boolean unbindService(IServiceConnection connection) throws RemoteException;
 
     boolean switchUser(int userid) throws RemoteException;
@@ -106,13 +120,13 @@ public interface IActivityManager extends IInterface {
     void setActivityController(IActivityController watcher, boolean imAMonkey) throws RemoteException;
 
     @RequiresApi(29)
-    ContentProviderHolder getContentProviderExternal(String name, int userId,
-                                                     IBinder token, String tag);
+    ContentProviderHolder getContentProviderExternal(String name, int userId, IBinder token, String tag) throws RemoteException;
 
-    ContentProviderHolder getContentProviderExternal(String name, int userId,
-                                                     IBinder token);
+    ContentProviderHolder getContentProviderExternal(String name, int userId, IBinder token) throws RemoteException;
 
     Configuration getConfiguration() throws RemoteException;
+
+    void registerUidObserver(IUidObserver observer, int which, int cutpoint, String callingPackage) throws RemoteException;
 
     abstract class Stub extends Binder implements IActivityManager {
         public static int TRANSACTION_setActivityController;

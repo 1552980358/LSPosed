@@ -20,18 +20,22 @@
 import java.time.Instant
 
 plugins {
-    id("com.android.application")
-    id("androidx.navigation.safeargs")
-    id("dev.rikka.tools.autoresconfig")
-    id("dev.rikka.tools.materialthemebuilder")
+    alias(libs.plugins.agp.app)
+    alias(libs.plugins.nav.safeargs)
+    alias(libs.plugins.autoresconfig)
+    alias(libs.plugins.materialthemebuilder)
+    alias(libs.plugins.lsplugin.resopt)
+    alias(libs.plugins.lsplugin.apksign)
+}
+
+apksign {
+    storeFileProperty = "androidStoreFile"
+    storePasswordProperty = "androidStorePassword"
+    keyAliasProperty = "androidKeyAlias"
+    keyPasswordProperty = "androidKeyPassword"
 }
 
 val defaultManagerPackageName: String by rootProject.extra
-
-val androidStoreFile: String? by rootProject
-val androidStorePassword: String? by rootProject
-val androidKeyAlias: String? by rootProject
-val androidKeyPassword: String? by rootProject
 
 android {
     buildFeatures {
@@ -44,7 +48,7 @@ android {
         buildConfigField("long", "BUILD_TIME", Instant.now().epochSecond.toString())
     }
 
-    packagingOptions {
+    packaging {
         resources {
             excludes += "META-INF/**"
             excludes += "okhttp3/**"
@@ -57,29 +61,11 @@ android {
 
     dependenciesInfo.includeInApk = false
 
-    signingConfigs {
-        create("config") {
-            androidStoreFile?.also {
-                storeFile = rootProject.file(it)
-                storePassword = androidStorePassword
-                keyAlias = androidKeyAlias
-                keyPassword = androidKeyPassword
-            }
-        }
-    }
-
     buildTypes {
-        signingConfigs.named("config").get().also {
-            debug {
-                if (it.storeFile?.exists() == true) signingConfig = it
-            }
-            release {
-                signingConfig = if (it.storeFile?.exists() == true) it
-                else signingConfigs.named("debug").get()
-                isMinifyEnabled = true
-                isShrinkResources = true
-                proguardFiles("proguard-rules.pro")
-            }
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles("proguard-rules.pro")
         }
     }
 
@@ -90,14 +76,14 @@ android {
             }
         }
     }
-    namespace = "org.lsposed.manager"
+    namespace = defaultManagerPackageName
 }
 
 autoResConfig {
-    generateClass.set(true)
-    generateRes.set(false)
-    generatedClassFullName.set("org.lsposed.manager.util.LangList")
-    generatedArrayFirstItem.set("SYSTEM")
+    generateClass = true
+    generateRes = false
+    generatedClassFullName = "org.lsposed.manager.util.LangList"
+    generatedArrayFirstItem = "SYSTEM"
 }
 
 materialThemeBuilder {
@@ -136,43 +122,41 @@ materialThemeBuilder {
 }
 
 dependencies {
-    val glideVersion = "4.13.2"
-    val navVersion: String by project
-    annotationProcessor("com.github.bumptech.glide:compiler:$glideVersion")
-    implementation("androidx.activity:activity:1.4.0")
-    implementation("androidx.browser:browser:1.4.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.3")
-    implementation("androidx.core:core:1.7.0")
-    implementation("androidx.fragment:fragment:1.4.1")
-    implementation("androidx.navigation:navigation-fragment:$navVersion")
-    implementation("androidx.navigation:navigation-ui:$navVersion")
-    implementation("androidx.preference:preference:1.2.0")
-    implementation("androidx.recyclerview:recyclerview:1.2.1")
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01")
-    implementation("com.github.bumptech.glide:glide:$glideVersion")
-    implementation("com.google.android.material:material:1.6.0-beta01")
-    implementation("com.google.code.gson:gson:2.9.0")
-    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.9.3"))
-    implementation("com.squareup.okhttp3:okhttp")
-    implementation("com.squareup.okhttp3:okhttp-dnsoverhttps")
-    implementation("com.squareup.okhttp3:logging-interceptor")
-    implementation("dev.rikka.rikkax.appcompat:appcompat:1.4.1")
-    implementation("dev.rikka.rikkax.core:core:1.4.0")
-    implementation("dev.rikka.rikkax.insets:insets:1.2.0")
-    implementation("dev.rikka.rikkax.material:material:2.3.0")
-    implementation("dev.rikka.rikkax.material:material-preference:1.0.0")
-    implementation("dev.rikka.rikkax.preference:simplemenu-preference:1.0.3")
-    implementation("dev.rikka.rikkax.recyclerview:recyclerview-ktx:1.3.1")
-    implementation("dev.rikka.rikkax.widget:borderview:1.1.0")
-    implementation("dev.rikka.rikkax.widget:mainswitchbar:1.0.2")
-    implementation("dev.rikka.rikkax.layoutinflater:layoutinflater:1.2.0")
-    implementation("me.zhanghai.android.appiconloader:appiconloader:1.4.0")
-    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:4.3")
+    annotationProcessor(libs.glide.compiler)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.browser)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.core)
+    implementation(libs.androidx.fragment)
+    implementation(libs.androidx.navigation.fragment)
+    implementation(libs.androidx.navigation.ui)
+    implementation(libs.androidx.preference)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.glide)
+    implementation(libs.material)
+    implementation(libs.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.dnsoverhttps)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.rikkax.appcompat)
+    implementation(libs.rikkax.core)
+    implementation(libs.rikkax.insets)
+    implementation(libs.rikkax.material)
+    implementation(libs.rikkax.material.preference)
+    implementation(libs.rikkax.preference)
+    implementation(libs.rikkax.recyclerview)
+    implementation(libs.rikkax.widget.borderview)
+    implementation(libs.rikkax.widget.mainswitchbar)
+    implementation(libs.rikkax.layoutinflater)
+    implementation(libs.appiconloader)
+    implementation(libs.hiddenapibypass)
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.kotlinx.coroutines.core)
     implementation(projects.services.managerService)
 
-    val appCenter = "4.4.3"
-    debugImplementation("com.microsoft.appcenter:appcenter-crashes:${appCenter}")
-    debugImplementation("com.microsoft.appcenter:appcenter-analytics:${appCenter}")
+    debugImplementation(libs.appcenter.analytics)
+    debugImplementation(libs.appcenter.crashes)
 }
 
 configurations.all {

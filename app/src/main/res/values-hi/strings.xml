@@ -19,7 +19,6 @@
   -->
 <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/xposed_module_updated_notification_*,@string/module_is_not_activated_*">
     <!-- MainActivity -->
-    <string name="info">जानकारियां</string>
     <string name="overview">ओवरव्यू</string>
     <string name="Modules">मॉड्यूल्स</string>
     <plurals name="modules_enabled_count">
@@ -32,14 +31,15 @@
     <string name="About">इसके बारे में</string>
     <string name="report_issue">इशू को रिपोर्ट करें</string>
     <string name="module_repo">रिपोज़िटरी</string>
-    <string name="module_repo_loading">लोड हो रहा है…</string>
     <string name="module_repo_up_to_date">सभी मॉड्यूल अप टू डेट</string>
+    <string name="module_repo_published_time">%s. पर प्रकाशित</string>
+    <string name="module_repo_updated_time">%s. पर अपडेट किया गया</string>
     <plurals name="module_repo_upgradable">
         <item quantity="one">%d मॉड्यूल अपग्रेड करने योग्य</item>
         <item quantity="other">%d मॉड्यूल अपग्रेड करने योग्य</item>
     </plurals>
     <string name="about_view_source_code"><![CDATA[%1$s<br/>पर सोर्स कोड देखें हमारे %2$s चैनल से जुड़ें]]></string>
-    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">व्यर्थ</string>
+    <string name="translators" comment="Dear translators, please add your home page here following the format. There can be more than one translator. So feel free to append yourself.">Ahmad Shaikh</string>
     <string name="install">स्थापित करना</string>
     <string name="install_summary">LSPosed स्थापित करने के लिए टैप करें</string>
     <string name="not_installed">स्थापित नहीं हे</string>
@@ -47,22 +47,22 @@
     <string name="activated">सक्रिय</string>
     <string name="partial_activated">आंशिक रूप से सक्रिय</string>
     <string name="selinux_policy_not_loaded_summary">SEPolicy ठीक से लोड नहीं है</string>
-    <string name="selinux_policy_not_loaded"><![CDATA[सिस्टम फ्रेमवर्क को हुक करने वाले मॉड्यूल काम नहीं करेंगे।<br/>कृपया इसकी सूचना <a href="https://github.com/topjohnwu/Magisk/issues"><b>Magisk</b></a> डेवलपर को दें।]]></string>
+    <string name="selinux_policy_not_loaded"><![CDATA[कुछ सुविधाएँ काम नहीं करेंगी।<br/>कृपया इसकी सूचना <a href="https://github.com/topjohnwu/Magisk/issues"><b>मैजिक</b></a> डेवलपर को दें।]]></string>
     <string name="system_inject_fail_summary">सिस्टम फ्रेमवर्क इंजेक्शन विफल</string>
     <string name="system_inject_fail"><![CDATA[यह दुर्लभ है और <b>Magisk</b> या कुछ निम्न-गुणवत्ता वाले Magisk मॉड्यूल के कारण हो सकता है।<br/>कृपया Riru और LSPosed के अलावा अन्य Magisk मॉड्यूल को अक्षम करने का प्रयास करें या डेवलपर्स को पूर्ण लॉग सबमिट करें।]]></string>
     <string name="system_prop_incorrect_summary">सिस्टम प्रोप गलत</string>
     <string name="system_prop_incorrect"><![CDATA[कुछ आवश्यक सिस्टम गुण हटा दिए गए या संशोधित किए गए।<br/>मॉड्यूल कभी-कभी अमान्य हो सकते हैं।]]></string>
     <string name="need_update">अद्यतन करने की आवश्यकता है</string>
     <string name="please_update_summary">कृपया LSPosed का नवीनतम संस्करण स्थापित करें</string>
-    <string name="lsposed_not_active">LSPosed वर्तमान में स्थापित या सक्रिय नहीं है।</string>
     <string name="info_api_version">एपीआई संस्करण</string>
     <string name="info_framework_version">फ्रेमवर्क संस्करण</string>
-    <string name="info_manager_version">प्रबंधक संस्करण</string>
+    <string name="info_manager_package_name">प्रबंधक पैकेज का नाम</string>
     <string name="info_system_version">सिस्टम संस्करण</string>
     <string name="info_device">उपकरण</string>
     <string name="info_system_abi">सिस्टम एबीआई</string>
-    <string name="info_api">इंजेक्शन इंटरफ़ेस</string>
     <string name="info_dex2oat_wrapper">डेक्स ऑप्टिमाइज़र रैपर</string>
+    <string name="enabled">सक्रिय</string>
+    <string name="not_enabled">निष्क्रिय</string>
     <string name="supported">समर्थित</string>
     <string name="unsupported">असमर्थित</string>
     <string name="android_version_unsatisfied">Android संस्करण असंतुष्ट</string>
@@ -70,16 +70,22 @@
     <string name="mount_failed">माउंट विफल</string>
     <string name="selinux_permissive">SELinux अनुमेय है</string>
     <string name="sepolicy_incorrect">SELinux नीति गलत है</string>
-    <string name="parasitic_recommend">परजीवी प्रबंधक अनुशंसित</string>
-    <string name="parasitic_recommend_summary">LSPosed अब पता लगाने से बचने के लिए सिस्टम परजीवीकरण का समर्थन करता है। परजीवी प्रबंधक का शॉर्टकट सफलतापूर्वक बनाने के बाद आप प्रबंधक को सुरक्षित रूप से अनइंस्टॉल कर सकते हैं। किसी भी स्थिति में आप प्रबंधक को /data/adb/lspd/manager.apk से वापस स्थापित कर सकते हैं।</string>
-    <string name="create_shortcut">शॉर्टकट बनाएं</string>
-    <string name="never_show">कभी भी न दिखाओ</string>
     <string name="update_lsposed">अद्यतन LSPosed</string>
     <string name="update_lsposed_msg">LSPosed को अपडेट करने की पुष्टि करें? अपडेट पूरा होने के बाद यह डिवाइस रीबूट हो जाएगा</string>
+    <string name="info_copied">क्लिपबोर्ड पर नकल</string>
+    <!-- WelcomeDialog -->
+    <string name="parasitic_welcome">LSPosed में आपका स्वागत है</string>
+    <string name="parasitic_welcome_summary">आप परजीवी प्रबंधक का उपयोग कर रहे हैं, जो शॉर्टकट बना सकता है या सूचना से अभी भी खुला हो सकता है।</string>
+    <string name="parasitic_welcome_summary_no_shortcut_support">आप परजीवी प्रबंधक का उपयोग कर रहे हैं, जो सूचना से खुल सकता है।</string>
+    <string name="create_shortcut">शॉर्टकट बनाएं</string>
+    <string name="never_show">कभी भी न दिखाओ</string>
+    <string name="app_welcome">परजीवी प्रबंधक की सिफारिश की</string>
+    <string name="app_welcome_summary">LSPosed अब पता लगाने से बचने के लिए सिस्टम परजीवीकरण का समर्थन करता है, आप अधिसूचना से परजीवी प्रबंधक खोल सकते हैं। वर्तमान एप्लिकेशन को अनइंस्टॉल करने की अनुशंसा की जाती है।</string>
     <!-- LogsActivity -->
     <string name="menuSaveToSd">बचाना</string>
     <string name="nav_item_logs_verbose">वर्बोज़ लॉग्स</string>
     <string name="nav_item_logs_module">मॉड्यूल लॉग</string>
+    <string name="logs_saving">लॉग सहेजा जा रहा है, कृपया प्रतीक्षा करें</string>
     <string name="logs_saved">लॉग सेव हो गए</string>
     <string name="logs_save_failed2">सहेजने में विफल:\n%s</string>
     <string name="menuClearLog">अभी लॉग साफ़ करें</string>
@@ -87,7 +93,6 @@
     <string name="scroll_top">शीर्ष तक स्क्रॉल करें</string>
     <string name="loading">लोड हो रहा है…</string>
     <string name="scroll_bottom">नीचे स्क्रॉल करें</string>
-    <string name="logs_cannot_read">लॉग नहीं पढ़ सकता: \n</string>
     <string name="menuReload">पुनः लोड करें</string>
     <string name="logs_clear_failed_2">लॉग साफ़ करने में विफल</string>
     <string name="menu_enable_word_wrap">वर्ड रैप</string>
@@ -96,6 +101,7 @@
     <!-- ModulesActivity -->
     <string name="module_empty_description">(कोई विवरण नहीं दिया गया)</string>
     <string name="warning_xposed_min_version">इस मॉड्यूल को एक नए Xposed संस्करण (%d) की आवश्यकता है और इस प्रकार इसे सक्रिय नहीं किया जा सकता है</string>
+    <string name="warning_target_version_higher">यह मॉड्यूल एक नए Xposed संस्करण (%d) के लिए डिज़ाइन किया गया है और इस प्रकार कुछ कार्यात्मकताएँ काम नहीं कर सकती हैं</string>
     <string name="no_min_version_specified">यह मॉड्यूल Xposed संस्करण को निर्दिष्ट नहीं करता है जिसकी उसे आवश्यकता है।</string>
     <string name="warning_min_version_too_low">यह मॉड्यूल Xposed संस्करण %1$dके लिए बनाया गया था, लेकिन संस्करण %2$dमें असंगत परिवर्तनों के कारण, इसे अक्षम कर दिया गया है</string>
     <string name="warning_installed_on_external_storage">यह मॉड्यूल लोड नहीं किया जा सकता क्योंकि यह एसडी कार्ड पर स्थापित है, कृपया इसे आंतरिक भंडारण में ले जाएं</string>
@@ -158,7 +164,8 @@
     <string name="list_empty">¯\\\\_(ツ)_\/¯\nयहाँ कुछ भी नहीं</string>
     <!-- SettingsActivity -->
     <string name="settings_group_framework">रूपरेखा</string>
-    <string name="pref_title_disable_verbose_log">वर्बोज़ लॉग अक्षम करें</string>
+    <string name="settings_disable_verbose_log">वर्बोज़ लॉग अक्षम करें</string>
+    <string name="settings_disable_verbose_log_summary">रिपोर्ट वर्बोज़ लॉग शामिल करने का अनुरोध जारी करती है</string>
     <string name="pure_black_dark_theme">ब्लैक डार्क थीम</string>
     <string name="pure_black_dark_theme_summary">यदि डार्क थीम सक्षम है तो शुद्ध काली थीम का उपयोग करें</string>
     <string name="settings_group_theme">थीम</string>
@@ -182,15 +189,18 @@
     <string name="settings_translation_contributors">अनुवाद योगदानकर्ता</string>
     <string name="settings_translation">अनुवाद में भाग लें</string>
     <string name="settings_translation_summary">%s को अपनी भाषा में अनुवाद करने में हमारी सहायता करें</string>
-    <string name="pref_title_enable_auto_add_shortcut">स्वचालित रूप से एक शॉर्टकट जोड़ें</string>
-    <string name="create_shortcut_summary">मैन्युअल रूप से परजीवी प्रबंधक शॉर्टकट बनाएं</string>
-    <string name="settings_enable_auto_add_shortcut_summary">गैर-परजीवी प्रबंधक में अक्षम होने पर कोई नया शॉर्टकट नहीं जोड़ा जाएगा</string>
+    <string name="settings_create_shortcut_summary">एक शॉर्टकट बनाएं जो परजीवी प्रबंधक खोल सके</string>
+    <string name="settings_shortcut_pinned_hint">शॉर्टकट पिन किया गया</string>
+    <string name="settings_unsupported_pin_shortcut_summary">वर्तमान डिफ़ॉल्ट लांचर पिन शॉर्टकट का समर्थन नहीं करता</string>
+    <string name="settings_enable_status_notification">स्थिति अधिसूचना</string>
+    <string name="settings_enable_status_notification_summary">एक अधिसूचना दिखाएं जो परजीवी प्रबंधक खोल सकती है</string>
+    <string name="disable_status_notification_error">कोई शॉर्टकट नहीं, अधिसूचना अक्षम नहीं कर सकता</string>
     <string name="settings_update_channel">चैनल अपडेट करें</string>
     <string name="update_channel_stable">स्थिर</string>
     <string name="update_channel_bate">बीटा</string>
     <string name="update_channel_nightly">सॉफ़्टवेयर की स्थिरता</string>
-    <string name="pref_title_restrict_classloader">केवल मॉड्यूल क्लासलोडर Xposed API का उपयोग कर सकता है</string>
-    <string name="pref_summary_restrict_classloader">यह कुछ मॉड्यूल को तोड़ सकता है लेकिन सुरक्षा को लाभ देता है (प्रायोगिक सुविधा)</string>
+    <string name="settings_xposed_api_call_protection">Xposed API कॉल सुरक्षा</string>
+    <string name="settings_xposed_api_call_protection_summary">Xposed API का उपयोग करने के लिए गतिशील रूप से लोड किए गए मॉड्यूल कोड को ब्लॉक करें, इससे कुछ मॉड्यूल टूट सकते हैं लेकिन सुरक्षा को लाभ होगा</string>
     <!-- Module Repo -->
     <string name="module_readme">रीडमी</string>
     <string name="module_releases">विज्ञप्ति</string>
@@ -200,18 +210,15 @@
     <string name="module_information_collaborators">सहयोगियों</string>
     <string name="module_release_view_assets">संपत्तियां</string>
     <string name="menu_open_in_browser">ब्राउज़र में खोलें</string>
-    <string name="refresh">ताज़ा करना</string>
     <string name="module_release_load_more">पुराने संस्करण दिखाएं</string>
     <string name="module_release_no_more">कोई और रिलीज नहीं</string>
     <string name="repo_load_failed">मॉड्यूल रेपो लोड करने में विफल: %s</string>
     <string name="sort_upgradable_first">पहले अपग्रेड करने योग्य</string>
-    <!-- CrashReportActivity -->
-    <string name="version_mismatch">LSPosed ढांचे का संस्करण (%1$d) प्रबंधक से मेल नहीं खाता (%2$d)। कृपया LSPosed को पुन: स्थापित करें।</string>
-    <string name="manager_crashed">प्रबंधक दुर्घटनाग्रस्त</string>
-    <string name="manager_crashed_info">इसकी रिपोर्ट करें </string>
-    <string name="send_crash_info">क्रैश की जानकारी भेजें</string>
-    <string name="crash_info_copied">क्रैश जानकारी को क्लिपबोर्ड पर कॉपी किया गया</string>
-    <string name="info_copied">क्लिपबोर्ड पर नकल</string>
+    <string name="installed">स्थापित</string>
+    <plurals name="module_release_assets_download_count">
+        <item quantity="one">%d डाउनलोड</item>
+        <item quantity="other">%d डाउनलोड</item>
+    </plurals>
     <!-- Colors -->
     <string name="color_sakura">सकुरा</string>
     <string name="color_red">लाल</string>

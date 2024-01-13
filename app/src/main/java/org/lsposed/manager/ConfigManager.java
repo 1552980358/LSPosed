@@ -100,7 +100,7 @@ public class ConfigManager {
         }
     }
 
-    public static boolean setModuleScope(String packageName, Set<ScopeAdapter.ApplicationWithEquals> applications) {
+    public static boolean setModuleScope(String packageName, boolean legacy, Set<ScopeAdapter.ApplicationWithEquals> applications) {
         try {
             List<Application> list = new ArrayList<>();
             applications.forEach(application -> {
@@ -109,6 +109,12 @@ public class ConfigManager {
                 app.packageName = application.packageName;
                 list.add(app);
             });
+            if (legacy) {
+                Application app = new Application();
+                app.userId = 0;
+                app.packageName = packageName;
+                list.add(app);
+            }
             return LSPManagerServiceHolder.getService().setModuleScope(packageName, list);
         } catch (RemoteException e) {
             Log.e(App.TAG, Log.getStackTraceString(e));
@@ -134,18 +140,18 @@ public class ConfigManager {
         return list;
     }
 
-    public static boolean isAddShortcut() {
+    public static boolean enableStatusNotification() {
         try {
-            return LSPManagerServiceHolder.getService().isAddShortcut();
+            return LSPManagerServiceHolder.getService().enableStatusNotification();
         } catch (RemoteException e) {
             Log.e(App.TAG, Log.getStackTraceString(e));
             return false;
         }
     }
 
-    public static boolean setAddShortcut(boolean enabled) {
+    public static boolean setEnableStatusNotification(boolean enabled) {
         try {
-            LSPManagerServiceHolder.getService().setAddShortcut(enabled);
+            LSPManagerServiceHolder.getService().setEnableStatusNotification(enabled);
             return true;
         } catch (RemoteException e) {
             Log.e(App.TAG, Log.getStackTraceString(e));
@@ -211,9 +217,9 @@ public class ConfigManager {
         }
     }
 
-    public static boolean reboot(boolean shutdown) {
+    public static boolean reboot() {
         try {
-            LSPManagerServiceHolder.getService().reboot(shutdown);
+            LSPManagerServiceHolder.getService().reboot();
             return true;
         } catch (RemoteException e) {
             Log.e(App.TAG, Log.getStackTraceString(e));
